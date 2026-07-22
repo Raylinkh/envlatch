@@ -23,11 +23,12 @@ public struct InstallationInspector: Sendable {
         skillFileURLs: [URL] = [],
         pairScriptURL: URL? = nil
     ) {
-        self.executableURL = executableURL
+        let resolvedExecutable = executableURL.standardizedFileURL.resolvingSymlinksInPath()
+        self.executableURL = resolvedExecutable
         self.linkURL = linkURL
         self.skillFileURLs = skillFileURLs
         self.pairScriptURL = pairScriptURL
-            ?? executableURL.deletingLastPathComponent()
+            ?? resolvedExecutable.deletingLastPathComponent()
                 .deletingLastPathComponent()
                 .appendingPathComponent("Resources/pair-agents.sh")
     }

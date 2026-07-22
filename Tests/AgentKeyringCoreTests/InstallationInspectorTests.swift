@@ -37,6 +37,9 @@ struct InstallationInspectorTests {
         try FileManager.default.removeItem(at: link)
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: executable)
         #expect(inspector.linkStatus() == .installed)
+
+        let symlinkLaunchedInspector = InstallationInspector(executableURL: link, linkURL: link)
+        #expect(symlinkLaunchedInspector.executableURL.path == executable.path)
         for skillFile in skillFiles {
             try FileManager.default.createDirectory(
                 at: skillFile.deletingLastPathComponent(),
