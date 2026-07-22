@@ -37,7 +37,7 @@ The installed links resolved as follows:
 
 ## Installed GUI to CLI behavior
 
-A high-entropy disposable value was generated in the desktop-control process and saved through the installed GUI as `AGENT_KEYRING_FINAL_TEST_TOKEN`. Only its SHA-256 digest was passed to the verifier. The installed CLI then replaced itself with the verifier and returned:
+A high-entropy disposable value was generated in the desktop-control process and saved through the final signed GUI as `AGENT_KEYRING_RELEASE_TEST_TOKEN`. Only its SHA-256 digest was passed to the verifier. The same installed CLI then replaced itself with the verifier and returned:
 
 ```text
 exact_value=true
@@ -73,4 +73,4 @@ The built and installed macOS windows were inspected through the accessibility t
 
 ## Cleanup state
 
-The disposable Keychain items `AGENT_KEYRING_TEST_TOKEN`, `AGENT_KEYRING_ACL_TEST_TOKEN`, and `AGENT_KEYRING_FINAL_TEST_TOKEN` contain no real credentials. Their GUI deletion awaits the required irreversible-action confirmation.
+The disposable Keychain items `AGENT_KEYRING_TEST_TOKEN`, `AGENT_KEYRING_ACL_TEST_TOKEN`, `AGENT_KEYRING_FINAL_TEST_TOKEN`, and `AGENT_KEYRING_RELEASE_TEST_TOKEN` contain no real credentials. Their GUI deletion awaits the required irreversible-action confirmation.
