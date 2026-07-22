@@ -47,6 +47,7 @@ struct EndpointProfileStoreTests {
     @Test(arguments: [
         ("", "https://api.example.com"),
         ("Provider", "file:///tmp/key"),
+        ("Provider", "http://api.example.com"),
         ("Provider", "https://user:password@example.com"),
     ])
     func rejectsInvalidProfiles(provider: String, baseURL: String) throws {
@@ -57,6 +58,36 @@ struct EndpointProfileStoreTests {
                 contract: .openAIChat,
                 baseURL: baseURL
             )
+        }
+    }
+
+    @Test func permitsPlainHTTPOnlyForExplicitLoopbackHosts() throws {
+        for baseURL in ["http://localhost:8317/v1", "http://127.0.0.1:8317/v1", "http://[::1]:8317/v1"] {
+            _ = try EndpointProfile(
+                providerName: "Local proxy",
+                credentialName: CredentialName(validating: "LOCAL_API_KEY"),
+                contract: .openAIResponses,
+                baseURL: baseURL
+            )
+        }
+    }
+
+    @Test func profileLookupUsesOnlyTheDisplayedProfileName() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-keyring-profile-lookup-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = EndpointProfileStore(fileURL: root.appendingPathComponent("profiles.json"))
+        let profile = try EndpointProfile(
+            providerName: "OpenRouter",
+            credentialName: CredentialName(validating: "OPENROUTER_API_KEY"),
+            contract: .openAIResponses,
+            baseURL: "https://openrouter.ai/api/v1"
+        )
+        try store.upsert(profile)
+
+        #expect(try store.profile(named: "OpenRouter") == profile)
+        #expect(throws: EndpointProfileError.self) {
+            try store.profile(named: "OPENROUTER_API_KEY")
         }
     }
 }

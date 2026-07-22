@@ -42,9 +42,9 @@ public enum EndpointProfileError: Error, Equatable, LocalizedError, Sendable {
         case .invalidProviderName:
             "Use a provider/profile name between 1 and 80 characters with no control characters."
         case .invalidBaseURL:
-            "Use an http or https base URL with no embedded username or password."
+            "Use an https base URL, or http only for localhost/loopback, with no embedded username or password."
         case .profileNotFound(let identifier):
-            "No endpoint profile matches \(identifier). Run `agent-keyring profiles` to list available profiles."
+            "No endpoint profile is named \(identifier). Run `agent-keyring profiles` to list available profile names."
         }
     }
 }
@@ -74,8 +74,9 @@ public struct EndpointProfile: Codable, Equatable, Identifiable, Sendable {
 
         let baseURL = rawBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let components = URLComponents(string: baseURL),
-              ["http", "https"].contains(components.scheme?.lowercased() ?? ""),
-              components.host != nil,
+              let scheme = components.scheme?.lowercased(),
+              let host = components.host?.lowercased(),
+              scheme == "https" || (scheme == "http" && Self.loopbackHosts.contains(host)),
               components.user == nil,
               components.password == nil else {
             throw EndpointProfileError.invalidBaseURL
@@ -88,6 +89,8 @@ public struct EndpointProfile: Codable, Equatable, Identifiable, Sendable {
         self.credentialEnvironmentName = try credentialEnvironmentName
             ?? CredentialName(validating: contract.defaultCredentialEnvironmentName)
     }
+
+    private static let loopbackHosts: Set<String> = ["localhost", "127.0.0.1", "::1", "[::1]"]
 
     public var secretEnvironmentNames: [String] {
         if credentialEnvironmentName == credentialName {

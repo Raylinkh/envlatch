@@ -107,7 +107,7 @@ public struct CLIApplication {
         let credentials: [String: String]
         let configuration: [String: String]
         if let profileIdentifier {
-            let profile = try endpointProfileStore.profile(matching: profileIdentifier)
+            let profile = try endpointProfileStore.profile(named: profileIdentifier)
             let value = try store.load(name: profile.credentialName)
             credentials = Dictionary(
                 uniqueKeysWithValues: profile.secretEnvironmentNames.map { ($0, value) }

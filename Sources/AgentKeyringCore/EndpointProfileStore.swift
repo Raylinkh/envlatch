@@ -22,10 +22,9 @@ public struct EndpointProfileStore: Sendable {
             .sorted { $0.providerName.localizedCaseInsensitiveCompare($1.providerName) == .orderedAscending }
     }
 
-    public func profile(matching identifier: String) throws -> EndpointProfile {
+    public func profile(named identifier: String) throws -> EndpointProfile {
         let match = try list().first {
             $0.providerName.caseInsensitiveCompare(identifier) == .orderedSame
-                || $0.credentialName.rawValue.caseInsensitiveCompare(identifier) == .orderedSame
         }
         guard let match else {
             throw EndpointProfileError.profileNotFound(identifier)
