@@ -1,8 +1,8 @@
 # AgentKeyring v1 Product Contract
 
-Status: revised for universal pairing; pending final independent review  
-Decision owner: Kehua  
-Decision: personal tool; no demand or public-launch claim  
+Status: revised for universal pairing; pending final independent re-review
+Decision owner: Kehua
+Decision: personal tool; no demand or public-launch claim
 Meta-budget: one native app, one bundled executable, one portable skill, no server, sync, provider plugin, or custom cryptography
 
 ## Outcome and boundaries
@@ -86,6 +86,8 @@ Candidate identity is the release build produced from one commit and its recorde
 Negative proof covers each rejected credential-name category, embedded NUL, empty value, empty vault, missing `--`, missing executable, non-executable path, Keychain denial/interaction failure where safely injectable, delete-not-found, and stale CLI symlink. An unrelated probe binary queries the disposable item with authentication UI disabled and must be denied; the app/CLI candidate must still read it. The built app is launched on the current Mac and inspected for empty, add, saved, replace, delete-confirmation, Keychain-error, and CLI-link states. Keyboard-only traversal, accessibility labels, text status independent of color, light/dark appearance, and Reduce Motion are checked at the native surface.
 
 Evidence is invalidated by changes to the Keychain query identity, accessibility/access-control policy, CLI parsing, environment construction, exec path, signing, bundle layout, or install symlink.
+
+The current non-secret receipts are recorded in [VERIFICATION.md](VERIFICATION.md).
 
 ## Prior art and deferred decisions
 

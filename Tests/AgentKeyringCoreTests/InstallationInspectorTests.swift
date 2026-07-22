@@ -22,6 +22,8 @@ struct InstallationInspectorTests {
             root.appendingPathComponent(".gemini/skills/agent-keyring/SKILL.md"),
         ]
         let pairScript = root.appendingPathComponent("AgentKeyring.app/Contents/Resources/pair-agents.sh")
+        let bundledSkill = pairScript.deletingLastPathComponent()
+            .appendingPathComponent("agent-keyring-skill/SKILL.md")
         let inspector = InstallationInspector(
             executableURL: executable,
             linkURL: link,
@@ -40,14 +42,34 @@ struct InstallationInspectorTests {
 
         let symlinkLaunchedInspector = InstallationInspector(executableURL: link, linkURL: link)
         #expect(symlinkLaunchedInspector.executableURL.path == executable.path)
-        for skillFile in skillFiles {
+        try FileManager.default.createDirectory(
+            at: bundledSkill.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("shared skill".utf8).write(to: bundledSkill)
+        FileManager.default.createFile(atPath: pairScript.path, contents: Data())
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o755],
+            ofItemAtPath: pairScript.path
+        )
+
+        let canonicalDirectory = skillFiles[0].deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: canonicalDirectory, withIntermediateDirectories: true)
+        try Data("shared skill".utf8).write(to: skillFiles[0])
+        for skillFile in skillFiles.dropFirst() {
             try FileManager.default.createDirectory(
-                at: skillFile.deletingLastPathComponent(),
+                at: skillFile.deletingLastPathComponent().deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            FileManager.default.createFile(atPath: skillFile.path, contents: Data())
+            try FileManager.default.createSymbolicLink(
+                at: skillFile.deletingLastPathComponent(),
+                withDestinationURL: canonicalDirectory
+            )
         }
         #expect(inspector.pairingStatus() == .paired)
+
+        try Data("stale skill".utf8).write(to: skillFiles[0])
+        #expect(inspector.pairingStatus() == .incomplete)
         #expect(inspector.pairCommand.contains("pair-agents.sh"))
         #expect(inspector.bundleInvocation(program: "codex").hasSuffix(" run -- 'codex'"))
     }

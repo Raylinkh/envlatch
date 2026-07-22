@@ -76,12 +76,42 @@ public struct InstallationInspector: Sendable {
     }
 
     public func pairingStatus() -> AgentPairingStatus {
-        guard linkStatus() == .installed, !skillFileURLs.isEmpty else {
+        guard linkStatus() == .installed, skillFileURLs.count == 4 else {
             return .incomplete
         }
-        return skillFileURLs.allSatisfy { FileManager.default.fileExists(atPath: $0.path) }
-            ? .paired
-            : .incomplete
+
+        let fileManager = FileManager.default
+        let canonicalFile = skillFileURLs[0].standardizedFileURL
+        let canonicalDirectory = canonicalFile.deletingLastPathComponent()
+        let bundledFile = pairScriptURL.deletingLastPathComponent()
+            .appendingPathComponent("agent-keyring-skill/SKILL.md")
+
+        guard fileManager.isExecutableFile(atPath: pairScriptURL.path),
+              (try? fileManager.destinationOfSymbolicLink(atPath: canonicalDirectory.path)) == nil,
+              let canonicalData = try? Data(contentsOf: canonicalFile),
+              let bundledData = try? Data(contentsOf: bundledFile),
+              canonicalData == bundledData else {
+            return .incomplete
+        }
+
+        let resolvedCanonicalDirectory = canonicalDirectory.resolvingSymlinksInPath().path
+        for skillFile in skillFileURLs.dropFirst() {
+            let skillDirectory = skillFile.deletingLastPathComponent()
+            guard let destination = try? fileManager.destinationOfSymbolicLink(atPath: skillDirectory.path) else {
+                return .incomplete
+            }
+            let destinationURL = destination.hasPrefix("/")
+                ? URL(fileURLWithPath: destination)
+                : URL(
+                    fileURLWithPath: destination,
+                    relativeTo: skillDirectory.deletingLastPathComponent()
+                )
+            guard destinationURL.standardizedFileURL.resolvingSymlinksInPath().path
+                    == resolvedCanonicalDirectory else {
+                return .incomplete
+            }
+        }
+        return .paired
     }
 
     public var pairCommand: String {
