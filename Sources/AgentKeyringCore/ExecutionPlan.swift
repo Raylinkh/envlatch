@@ -25,7 +25,8 @@ public struct ExecutionPlan: Equatable, Sendable {
         originalProgram: String,
         arguments: [String],
         inheritedEnvironment: [String: String],
-        credentials: [String: String]
+        credentials: [String: String],
+        configuration: [String: String] = [:]
     ) throws -> ExecutionPlan {
         guard !credentials.isEmpty else {
             throw ExecutionPlanError.emptyCredentials
@@ -43,12 +44,30 @@ public struct ExecutionPlan: Equatable, Sendable {
             try CredentialName.validateValue(value)
             environment[name.rawValue] = value
         }
+        for (name, value) in configuration {
+            guard isSafeEnvironmentName(name), !value.utf8.contains(0) else {
+                throw ExecutionPlanError.containsNul(field: "Environment configuration")
+            }
+            environment[name] = value
+        }
 
         return ExecutionPlan(
             executable: resolvedExecutable,
             arguments: [originalProgram] + arguments,
             environment: environment
         )
+    }
+
+    private static func isSafeEnvironmentName(_ value: String) -> Bool {
+        guard let first = value.utf8.first,
+              (65...90).contains(first) || first == 95,
+              !value.hasPrefix("DYLD_"),
+              !value.hasPrefix("LD_") else {
+            return false
+        }
+        return value.utf8.dropFirst().allSatisfy {
+            (65...90).contains($0) || (48...57).contains($0) || $0 == 95
+        }
     }
 }
 

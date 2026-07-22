@@ -68,9 +68,18 @@ struct InstallationInspectorTests {
         }
         #expect(inspector.pairingStatus() == .paired)
 
+        let prompt = inspector.setupPrompt
+        #expect(prompt.contains("agent-keyring pair \"<your agent or host name>\""))
+        #expect(prompt.contains("agent-keyring doctor"))
+        #expect(prompt.contains("agent-keyring help"))
+        #expect(prompt.contains("agent-keyring profiles"))
+        #expect(prompt.contains("agent-keyring run --using <profile-name> -- <program> [args...]"))
+        #expect(prompt.contains("agent-keyring run -- <program> [args...]"))
+        #expect(prompt.contains("Never print, reveal, export, or write secret values"))
+
         try Data("stale skill".utf8).write(to: skillFiles[0])
         #expect(inspector.pairingStatus() == .incomplete)
-        #expect(inspector.pairCommand.contains("pair-agents.sh"))
+        #expect(inspector.pairCommand.contains(" pair \"<your agent or host name>\""))
         #expect(inspector.bundleInvocation(program: "codex").hasSuffix(" run -- 'codex'"))
     }
 }

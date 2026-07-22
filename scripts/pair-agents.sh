@@ -65,4 +65,5 @@ done
 
 echo "AgentKeyring CLI: $cli_link"
 echo "Shared skill: $canonical_skill"
-echo "Paired agents: Codex, Claude Code, Gemini CLI"
+echo "Discovery links: Codex, Claude Code, Gemini CLI"
+echo "Any agent or host can register with: agent-keyring pair <name>"

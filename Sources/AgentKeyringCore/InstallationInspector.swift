@@ -76,7 +76,7 @@ public struct InstallationInspector: Sendable {
     }
 
     public func pairingStatus() -> AgentPairingStatus {
-        guard linkStatus() == .installed, skillFileURLs.count == 4 else {
+        guard linkStatus() == .installed, !skillFileURLs.isEmpty else {
             return .incomplete
         }
 
@@ -94,28 +94,39 @@ public struct InstallationInspector: Sendable {
             return .incomplete
         }
 
-        let resolvedCanonicalDirectory = canonicalDirectory.resolvingSymlinksInPath().path
-        for skillFile in skillFileURLs.dropFirst() {
-            let skillDirectory = skillFile.deletingLastPathComponent()
-            guard let destination = try? fileManager.destinationOfSymbolicLink(atPath: skillDirectory.path) else {
-                return .incomplete
-            }
-            let destinationURL = destination.hasPrefix("/")
-                ? URL(fileURLWithPath: destination)
-                : URL(
-                    fileURLWithPath: destination,
-                    relativeTo: skillDirectory.deletingLastPathComponent()
-                )
-            guard destinationURL.standardizedFileURL.resolvingSymlinksInPath().path
-                    == resolvedCanonicalDirectory else {
-                return .incomplete
-            }
-        }
         return .paired
     }
 
     public var pairCommand: String {
-        shellQuote(pairScriptURL.path)
+        let executable = linkStatus() == .installed
+            ? "agent-keyring"
+            : shellQuote(executableURL.path)
+        return "\(executable) pair \"<your agent or host name>\""
+    }
+
+    public var sharedSkillURL: URL {
+        if let canonical = skillFileURLs.first {
+            return canonical.deletingLastPathComponent()
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".agents/skills/agent-keyring")
+    }
+
+    public var setupPrompt: String {
+        """
+        Set up this agent or host with AgentKeyring on this Mac.
+
+        1. Choose a short name for yourself, then run:
+           \(pairCommand)
+        2. Run `agent-keyring doctor` and confirm `agent_pairing=paired`.
+        3. Run `agent-keyring help` and follow its usage.
+        4. Run `agent-keyring profiles` to find saved endpoint profiles.
+        5. When a command needs a profiled credential, run it exactly as:
+           agent-keyring run --using <profile-name> -- <program> [args...]
+           Otherwise use: agent-keyring run -- <program> [args...]
+
+        Use `agent-keyring list` only to check saved environment-variable names. Never print, reveal, export, or write secret values to files or shell profiles.
+        """
     }
 
     public func bundleInvocation(program: String) -> String {

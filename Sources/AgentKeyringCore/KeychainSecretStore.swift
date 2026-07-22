@@ -5,6 +5,7 @@ public protocol SecretStore {
     func listNames() throws -> [CredentialName]
     func save(name: CredentialName, value: String) throws
     func delete(name: CredentialName) throws
+    func load(name: CredentialName) throws -> String
     func loadAll() throws -> [String: String]
 }
 
@@ -163,11 +164,11 @@ public struct KeychainSecretStore: SecretStore {
     public func loadAll() throws -> [String: String] {
         let names = try listNames()
         return try names.reduce(into: [:]) { values, name in
-            values[name.rawValue] = try read(name: name)
+            values[name.rawValue] = try load(name: name)
         }
     }
 
-    private func read(name: CredentialName) throws -> String {
+    public func load(name: CredentialName) throws -> String {
         var query = KeychainQueryFactory.item(service: service, name: name)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
