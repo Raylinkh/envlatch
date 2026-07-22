@@ -1,0 +1,4 @@
+interface:
+  display_name: "AgentKeyring"
+  short_description: "Run commands with Keychain-backed API keys"
+  default_prompt: "Use AgentKeyring to run the exact command that needs saved credentials without revealing or exporting secret values."
