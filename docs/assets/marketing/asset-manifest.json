@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "assetRoot": "marketing",
+  "files": [
+    {
+      "path": "envlatch-hero.png",
+      "intendedUse": "GitHub README hero showing the concrete .env-to-Keychain before and after workflow",
+      "status": "production-docs",
+      "width": 1600,
+      "height": 900,
+      "mode": "RGB",
+      "hasTransparency": false,
+      "bytes": 181880,
+      "sha256": "b9fa4a522ad8bc32101b7a4195152db2c19297413a293709efb1443120daf41a"
+    },
+    {
+      "path": "envlatch-main-demo.png",
+      "intendedUse": "Sanitized fictional-data product screenshot embedded in public marketing graphics",
+      "status": "production-docs",
+      "width": 720,
+      "height": 672,
+      "mode": "RGB",
+      "hasTransparency": false,
+      "bytes": 59469,
+      "sha256": "6b75c63fe3e97ec9090a9de4344788a1676d5eff6a2c278d6ee40dea4ba639a2"
+    },
+    {
+      "path": "xiaohongshu/01-cover-before-after.png",
+      "intendedUse": "Xiaohongshu carousel cover with the API-key copying problem and EnvLatch outcome",
+      "status": "ready-to-post",
+      "width": 1080,
+      "height": 1440,
+      "mode": "RGB",
+      "hasTransparency": false,
+      "bytes": 192019,
+      "sha256": "0070ba4e6bbefd10a4ff702fce7c1b15d5e645f16c9d9befdcff3d35d732ed9b"
+    },
+    {
+      "path": "xiaohongshu/02-real-product-and-commands.png",
+      "intendedUse": "Xiaohongshu product evidence card with real UI and provider-agnostic commands",
+      "status": "ready-to-post",
+      "width": 1080,
+      "height": 1440,
+      "mode": "RGB",
+      "hasTransparency": false,
+      "bytes": 210844,
+      "sha256": "14726bdeee24a50549f2efa93df97c192be730f45334230d7c530358c2c99237"
+    },
+    {
+      "path": "xiaohongshu/03-three-step-setup.png",
+      "intendedUse": "Xiaohongshu setup card proving the three-step no-SDK workflow",
+      "status": "ready-to-post",
+      "width": 1080,
+      "height": 1440,
+      "mode": "RGB",
+      "hasTransparency": false,
+      "bytes": 406489,
+      "sha256": "ca87c5e0dd6f7ab166debb33ac14214cfd15d908c51a3ed1f816243cc636ce17"
+    },
+    {
+      "path": "xiaohongshu/04-security-boundary.png",
+      "intendedUse": "Xiaohongshu trust card explaining the exact security and distribution boundary",
+      "status": "ready-to-post",
+      "width": 1080,
+      "height": 1440,
+      "mode": "RGB",
+      "hasTransparency": false,
+      "bytes": 161196,
+      "sha256": "715aed0cc3d976d79f559be94c372a5ab3793d371ecc7dcc163853ef1af5adb8"
+    }
+  ]
+}

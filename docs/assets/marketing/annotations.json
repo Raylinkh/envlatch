@@ -1,0 +1,26 @@
+{
+  "envlatch-hero.png": {
+    "intendedUse": "GitHub README hero showing the concrete .env-to-Keychain before and after workflow",
+    "status": "production-docs"
+  },
+  "envlatch-main-demo.png": {
+    "intendedUse": "Sanitized fictional-data product screenshot embedded in public marketing graphics",
+    "status": "production-docs"
+  },
+  "xiaohongshu/01-cover-before-after.png": {
+    "intendedUse": "Xiaohongshu carousel cover with the API-key copying problem and EnvLatch outcome",
+    "status": "ready-to-post"
+  },
+  "xiaohongshu/02-real-product-and-commands.png": {
+    "intendedUse": "Xiaohongshu product evidence card with real UI and provider-agnostic commands",
+    "status": "ready-to-post"
+  },
+  "xiaohongshu/03-three-step-setup.png": {
+    "intendedUse": "Xiaohongshu setup card proving the three-step no-SDK workflow",
+    "status": "ready-to-post"
+  },
+  "xiaohongshu/04-security-boundary.png": {
+    "intendedUse": "Xiaohongshu trust card explaining the exact security and distribution boundary",
+    "status": "ready-to-post"
+  }
+}

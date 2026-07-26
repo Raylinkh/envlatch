@@ -1,12 +1,32 @@
-# EnvLatch
+<p align="center">
+  <img src="Resources/AppIcon.png" width="88" alt="EnvLatch app icon">
+</p>
 
-Store API keys once in macOS Keychain. Launch any local agent, SDK, script, test,
-or backend with exactly the EnvLatch-managed saved keys it needs.
+<h1 align="center">EnvLatch — One macOS Keychain for every local agent</h1>
 
-![EnvLatch native macOS app](docs/assets/envlatch-v0.1.0.png)
+<p align="center">
+  Store API keys once. Launch any local agent, SDK, script, test, or backend
+  with exactly the saved keys it needs.
+</p>
+
+<p align="center">
+  <a href="README.md"><strong>English</strong></a> ·
+  <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Raylinkh/envlatch/releases"><img alt="Release" src="https://img.shields.io/github/v/release/Raylinkh/envlatch?include_prereleases&amp;style=flat-square&amp;color=725CFF"></a>
+  <a href="https://github.com/Raylinkh/envlatch/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Raylinkh/envlatch/ci.yml?branch=main&amp;style=flat-square&amp;label=CI"></a>
+  <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-111111?style=flat-square&amp;logo=apple">
+  <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square&amp;logo=swift&amp;logoColor=white">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/Raylinkh/envlatch?style=flat-square"></a>
+  <a href="https://github.com/Raylinkh/envlatch/releases"><img alt="Release downloads" src="https://img.shields.io/github/downloads/Raylinkh/envlatch/total?style=flat-square&amp;label=downloads"></a>
+</p>
+
+![How EnvLatch replaces copied .env files with one macOS Keychain for every local agent](docs/assets/marketing/envlatch-hero.png)
 
 ```sh
-envlatch run --using MINIMAX_API_KEY -- claude
+envlatch run --using ANTHROPIC_API_KEY -- claude
 envlatch run --using GITHUB_TOKEN -- gh auth status
 envlatch run --using "Backend" -- npm test
 ```
