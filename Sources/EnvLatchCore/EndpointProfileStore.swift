@@ -18,17 +18,7 @@ public struct EndpointProfileStore: Sendable {
             return []
         }
         return try JSONDecoder().decode([EndpointProfile].self, from: Data(contentsOf: fileURL))
-            .sorted { $0.providerName.localizedCaseInsensitiveCompare($1.providerName) == .orderedAscending }
-    }
-
-    public func profile(named identifier: String) throws -> EndpointProfile {
-        let match = try list().first {
-            $0.providerName.caseInsensitiveCompare(identifier) == .orderedSame
-        }
-        guard let match else {
-            throw EndpointProfileError.profileNotFound(identifier)
-        }
-        return match
+            .sorted(by: precedes)
     }
 
     public func endpoint(for credentialName: CredentialName) throws -> EndpointProfile? {
@@ -36,10 +26,7 @@ public struct EndpointProfileStore: Sendable {
     }
 
     public func upsert(_ profile: EndpointProfile) throws {
-        var profiles = try list().filter {
-            $0.credentialName != profile.credentialName
-                && $0.providerName.caseInsensitiveCompare(profile.providerName) != .orderedSame
-        }
+        var profiles = try list().filter { $0.credentialName != profile.credentialName }
         profiles.append(profile)
         try write(profiles)
     }
@@ -58,10 +45,16 @@ public struct EndpointProfileStore: Sendable {
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let sorted = profiles.sorted {
-            $0.providerName.localizedCaseInsensitiveCompare($1.providerName) == .orderedAscending
-        }
+        let sorted = profiles.sorted(by: precedes)
         try encoder.encode(sorted).write(to: fileURL, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: fileURL.path)
+    }
+
+    private func precedes(_ lhs: EndpointProfile, _ rhs: EndpointProfile) -> Bool {
+        let providerOrder = lhs.providerName.localizedCaseInsensitiveCompare(rhs.providerName)
+        if providerOrder == .orderedSame {
+            return lhs.credentialName.rawValue < rhs.credentialName.rawValue
+        }
+        return providerOrder == .orderedAscending
     }
 }

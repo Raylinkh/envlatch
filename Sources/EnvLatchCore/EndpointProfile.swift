@@ -35,16 +35,13 @@ public enum APIContract: String, CaseIterable, Codable, Equatable, Sendable {
 public enum EndpointProfileError: Error, Equatable, LocalizedError, Sendable {
     case invalidProviderName
     case invalidBaseURL
-    case profileNotFound(String)
 
     public var errorDescription: String? {
         switch self {
         case .invalidProviderName:
             "Use a provider/profile name between 1 and 80 characters with no control characters."
         case .invalidBaseURL:
-            "Use an https base URL, or http only for localhost/loopback, with no embedded username or password."
-        case .profileNotFound(let identifier):
-            "No endpoint profile is named \(identifier). Run `envlatch profiles` to list available profile names."
+            "Use an https base URL, or http only for localhost/loopback, with no credentials, query, or fragment."
         }
     }
 }
@@ -78,7 +75,9 @@ public struct EndpointProfile: Codable, Equatable, Identifiable, Sendable {
               let host = components.host?.lowercased(),
               scheme == "https" || (scheme == "http" && Self.loopbackHosts.contains(host)),
               components.user == nil,
-              components.password == nil else {
+              components.password == nil,
+              components.query == nil,
+              components.fragment == nil else {
             throw EndpointProfileError.invalidBaseURL
         }
 

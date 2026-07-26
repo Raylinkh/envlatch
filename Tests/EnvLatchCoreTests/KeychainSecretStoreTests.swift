@@ -7,11 +7,16 @@ import Testing
 @Suite("AK-1, AK-2, and AK-5 Keychain storage", .serialized)
 struct KeychainSecretStoreTests {
     @Test func listQueryRequestsAttributesButNeverSecretData() {
-        let query = KeychainQueryFactory.list(service: "dev.envlatch.query-test")
+        let keychain = try! defaultKeychain()
+        let query = KeychainQueryFactory.list(
+            service: "dev.envlatch.query-test",
+            keychain: keychain
+        )
 
         #expect(query[kSecClass as String] as! CFString == kSecClassGenericPassword)
         #expect(query[kSecAttrService as String] as? String == "dev.envlatch.query-test")
         #expect(query[kSecAttrSynchronizable as String] as? Bool == false)
+        #expect(matchesOnly(query, keychain: keychain))
         #expect(query[kSecReturnAttributes as String] as? Bool == true)
         #expect(query[kSecReturnData as String] == nil)
         #expect(query[kSecMatchLimit as String] as! CFString == kSecMatchLimitAll)
@@ -19,26 +24,70 @@ struct KeychainSecretStoreTests {
 
     @Test func itemQueryPinsExactAccountAndNonSyncScope() throws {
         let name = try CredentialName(validating: "ENVLATCH_TEST_TOKEN")
-        let query = KeychainQueryFactory.item(service: "dev.envlatch.query-test", name: name)
+        let keychain = try defaultKeychain()
+        let query = KeychainQueryFactory.item(
+            service: "dev.envlatch.query-test",
+            name: name,
+            keychain: keychain
+        )
 
         #expect(query[kSecClass as String] as! CFString == kSecClassGenericPassword)
         #expect(query[kSecAttrService as String] as? String == "dev.envlatch.query-test")
         #expect(query[kSecAttrAccount as String] as? String == name.rawValue)
         #expect(query[kSecAttrSynchronizable as String] as? Bool == false)
+        #expect(matchesOnly(query, keychain: keychain))
     }
 
-    @Test func addQueryCarriesAnExplicitApplicationOnlyACL() throws {
+    @Test func addQueryCarriesAnExplicitTrustedApplicationACL() throws {
         let name = try CredentialName(validating: "ENVLATCH_TEST_TOKEN")
-        let access = try KeychainAccessFactory.applicationOnly(descriptor: name.rawValue)
+        let keychain = try defaultKeychain()
+        let access = try KeychainAccessFactory.trustedApplication(descriptor: name.rawValue)
         let query = KeychainQueryFactory.add(
             service: "dev.envlatch.query-test",
             name: name,
             valueData: Data("disposable".utf8),
-            access: access
+            access: access,
+            keychain: keychain
         )
 
         #expect(query[kSecAttrAccess as String] != nil)
         #expect(query[kSecValueData as String] as? Data == Data("disposable".utf8))
+        #expect(CFEqual(query[kSecUseKeychain as String] as CFTypeRef, keychain))
+
+        let decryptACLs = SecAccessCopyMatchingACLList(
+            access,
+            kSecACLAuthorizationDecrypt
+        ) as? [SecACL] ?? []
+        #expect(!decryptACLs.isEmpty)
+        var trustedApplicationData: Set<Data> = []
+        for acl in decryptACLs {
+            var applications: CFArray?
+            var description: CFString?
+            var promptSelector = SecKeychainPromptSelector()
+            #expect(
+                SecACLCopyContents(
+                    acl,
+                    &applications,
+                    &description,
+                    &promptSelector
+                ) == errSecSuccess
+            )
+            let trustedApplications = applications as? [SecTrustedApplication] ?? []
+            #expect(trustedApplications.count == 1)
+            for trustedApplication in trustedApplications {
+                var applicationData: CFData?
+                #expect(
+                    SecTrustedApplicationCopyData(
+                        trustedApplication,
+                        &applicationData
+                    ) == errSecSuccess
+                )
+                if let applicationData {
+                    trustedApplicationData.insert(applicationData as Data)
+                }
+            }
+        }
+        #expect(trustedApplicationData.count == 1)
     }
 
     @Test func realKeychainRoundTripReplaceAndIdempotentDelete() throws {
@@ -115,5 +164,22 @@ struct KeychainSecretStoreTests {
         SHA256.hash(data: Data((value ?? "").utf8))
             .map { String(format: "%02x", $0) }
             .joined()
+    }
+
+    private func defaultKeychain() throws -> SecKeychain {
+        var keychain: SecKeychain?
+        let status = SecKeychainCopyDefault(&keychain)
+        guard status == errSecSuccess, let keychain else {
+            throw KeychainStoreError.osStatus(operation: "open the default Keychain", status: status)
+        }
+        return keychain
+    }
+
+    private func matchesOnly(_ query: [String: Any], keychain: SecKeychain) -> Bool {
+        guard let searchList = query[kSecMatchSearchList as String] as? [SecKeychain],
+              searchList.count == 1 else {
+            return false
+        }
+        return CFEqual(searchList[0], keychain)
     }
 }

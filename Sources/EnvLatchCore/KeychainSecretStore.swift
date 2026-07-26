@@ -31,22 +31,28 @@ public enum KeychainStoreError: Error, LocalizedError, Sendable {
 }
 
 enum KeychainQueryFactory {
-    static func list(service: String) -> [String: Any] {
+    static func list(service: String, keychain: SecKeychain) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrSynchronizable as String: false,
+            kSecMatchSearchList as String: [keychain],
             kSecReturnAttributes as String: true,
             kSecMatchLimit as String: kSecMatchLimitAll,
         ]
     }
 
-    static func item(service: String, name: CredentialName) -> [String: Any] {
+    static func item(
+        service: String,
+        name: CredentialName,
+        keychain: SecKeychain
+    ) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: name.rawValue,
             kSecAttrSynchronizable as String: false,
+            kSecMatchSearchList as String: [keychain],
         ]
     }
 
@@ -54,18 +60,38 @@ enum KeychainQueryFactory {
         service: String,
         name: CredentialName,
         valueData: Data,
-        access: SecAccess
+        access: SecAccess,
+        keychain: SecKeychain
     ) -> [String: Any] {
-        var query = item(service: service, name: name)
-        query[kSecAttrLabel as String] = "EnvLatch · \(name.rawValue)"
-        query[kSecValueData as String] = valueData
-        query[kSecAttrAccess as String] = access
-        return query
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: name.rawValue,
+            kSecAttrSynchronizable as String: false,
+            kSecAttrLabel as String: "EnvLatch · \(name.rawValue)",
+            kSecValueData as String: valueData,
+            kSecAttrAccess as String: access,
+            kSecUseKeychain as String: keychain,
+        ]
+    }
+}
+
+enum KeychainTarget {
+    static func defaultKeychain() throws -> SecKeychain {
+        var keychain: SecKeychain?
+        let status = SecKeychainCopyDefault(&keychain)
+        guard status == errSecSuccess, let keychain else {
+            throw KeychainStoreError.osStatus(
+                operation: "open the default Keychain",
+                status: status
+            )
+        }
+        return keychain
     }
 }
 
 enum KeychainAccessFactory {
-    static func applicationOnly(descriptor: String) throws -> SecAccess {
+    static func trustedApplication(descriptor: String) throws -> SecAccess {
         var trustedApplication: SecTrustedApplication?
         let trustedStatus = SecTrustedApplicationCreateFromPath(nil, &trustedApplication)
         guard trustedStatus == errSecSuccess, let trustedApplication else {
@@ -83,7 +109,7 @@ enum KeychainAccessFactory {
         )
         guard accessStatus == errSecSuccess, let access else {
             throw KeychainStoreError.osStatus(
-                operation: "create application-only access",
+                operation: "create trusted-application access",
                 status: accessStatus
             )
         }
@@ -101,8 +127,12 @@ public struct KeychainSecretStore: SecretStore {
     }
 
     public func listNames() throws -> [CredentialName] {
+        let keychain = try KeychainTarget.defaultKeychain()
         var result: CFTypeRef?
-        let status = SecItemCopyMatching(KeychainQueryFactory.list(service: service) as CFDictionary, &result)
+        let status = SecItemCopyMatching(
+            KeychainQueryFactory.list(service: service, keychain: keychain) as CFDictionary,
+            &result
+        )
         if status == errSecItemNotFound {
             return []
         }
@@ -127,8 +157,13 @@ public struct KeychainSecretStore: SecretStore {
 
     public func save(name: CredentialName, value: String) throws {
         try CredentialName.validateValue(value)
+        let keychain = try KeychainTarget.defaultKeychain()
         let valueData = Data(value.utf8)
-        let identity = KeychainQueryFactory.item(service: service, name: name)
+        let identity = KeychainQueryFactory.item(
+            service: service,
+            name: name,
+            keychain: keychain
+        )
         let updateStatus = SecItemUpdate(
             identity as CFDictionary,
             [kSecValueData as String: valueData] as CFDictionary
@@ -141,12 +176,13 @@ public struct KeychainSecretStore: SecretStore {
             throw KeychainStoreError.osStatus(operation: "replace \(name.rawValue)", status: updateStatus)
         }
 
-        let access = try KeychainAccessFactory.applicationOnly(descriptor: name.rawValue)
+        let access = try KeychainAccessFactory.trustedApplication(descriptor: name.rawValue)
         let addQuery = KeychainQueryFactory.add(
             service: service,
             name: name,
             valueData: valueData,
-            access: access
+            access: access,
+            keychain: keychain
         )
         let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
@@ -155,7 +191,14 @@ public struct KeychainSecretStore: SecretStore {
     }
 
     public func delete(name: CredentialName) throws {
-        let status = SecItemDelete(KeychainQueryFactory.item(service: service, name: name) as CFDictionary)
+        let keychain = try KeychainTarget.defaultKeychain()
+        let status = SecItemDelete(
+            KeychainQueryFactory.item(
+                service: service,
+                name: name,
+                keychain: keychain
+            ) as CFDictionary
+        )
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainStoreError.osStatus(operation: "delete \(name.rawValue)", status: status)
         }
@@ -169,7 +212,12 @@ public struct KeychainSecretStore: SecretStore {
     }
 
     public func load(name: CredentialName) throws -> String {
-        var query = KeychainQueryFactory.item(service: service, name: name)
+        let keychain = try KeychainTarget.defaultKeychain()
+        var query = KeychainQueryFactory.item(
+            service: service,
+            name: name,
+            keychain: keychain
+        )
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 

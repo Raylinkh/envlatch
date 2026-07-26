@@ -1,7 +1,7 @@
 # EnvLatch
 
 Store API keys once in macOS Keychain. Launch any local agent, SDK, script, test,
-or backend with exactly the saved keys it needs.
+or backend with exactly the EnvLatch-managed saved keys it needs.
 
 ![EnvLatch native macOS app](docs/assets/envlatch-v0.1.0.png)
 
@@ -20,7 +20,7 @@ provider-specific command, proxy, or code change is required.
 - **One command for every provider and tool.** Profiles select environment
   variables; they do not select a hard-coded provider integration.
 - **Multiple keys without broad exposure.** A launch profile can contain one or
-  many saved keys, while unselected keys are not read from Keychain.
+  many saved keys, while unselected EnvLatch keys are not read from Keychain.
 - **Endpoint-compatible.** Per-key metadata can map a saved credential to the
   variable and base URL expected by Anthropic-, OpenAI-, or generic clients.
 - **Agent-friendly without revealing values.** The bundled portable skill
@@ -89,8 +89,8 @@ Endpoint metadata belongs to one saved key and never contains its value. It can
 record:
 
 - a display label;
-- API contract (`Anthropic`, `OpenAI Responses`, `OpenAI-compatible`, or
-  generic);
+- API contract (`Anthropic`, `OpenAI Chat Completions`, `OpenAI Responses`, or
+  `Gemini`);
 - HTTPS base URL, with plain HTTP allowed only for loopback development;
 - the credential variable expected by the target client.
 
@@ -142,6 +142,11 @@ Environment injection is not secret isolation. A launched process and its
 descendants can read every variable selected for that launch, and crash or
 debug tooling may expose process memory. EnvLatch does not sandbox a malicious
 agent or dependency. Use scoped keys and provider-side spending limits.
+
+EnvLatch preserves the caller's inherited environment. It prevents unselected
+EnvLatch Keychain items from being read, but it does not scrub credentials that
+were already exported by the parent shell or launcher. Start from a clean
+environment when inherited variables are also in scope.
 
 Credential names must be uppercase POSIX variable names with a recognized
 credential suffix. Loader-control names beginning with `DYLD_` or `LD_` are

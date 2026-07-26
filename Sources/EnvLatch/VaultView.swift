@@ -57,7 +57,7 @@ struct VaultView: View {
                 pendingDeletion = nil
             }
         } message: { _ in
-            Text("This permanently removes the value from your login Keychain.")
+            Text("This permanently removes the value from your default Keychain.")
         }
         .alert(
             "Delete launch profile \(pendingLaunchProfileDeletion?.name ?? "profile")?",
@@ -612,7 +612,7 @@ private struct KeyEditorSheet: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(existingName == nil ? "Add API key" : "Edit API key")
                     .font(.title3.weight(.semibold))
-                Text("The secret stays in your login Keychain. Endpoint settings never contain its value.")
+                Text("The secret stays in your default Keychain. Endpoint settings never contain its value.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

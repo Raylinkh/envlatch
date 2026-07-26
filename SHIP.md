@@ -10,6 +10,6 @@ Shipped: no
 
 ## Owner-gated publication steps
 
-- Re-authenticate GitHub CLI for `Raylinkh` and create the public `envlatch` repository.
+- Create the public `envlatch` repository and push the verified source commit.
 - Enable GitHub private vulnerability reporting after repository creation.
 - For a downloadable binary release, install a Developer ID Application identity and configure an Apple notary profile; source publication does not claim a signed binary.

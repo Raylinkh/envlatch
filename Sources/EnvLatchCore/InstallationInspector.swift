@@ -129,10 +129,6 @@ public struct InstallationInspector: Sendable {
         """
     }
 
-    public func bundleInvocation(program: String) -> String {
-        "\(shellQuote(executableURL.path)) run -- \(shellQuote(program))"
-    }
-
     private func shellQuote(_ value: String) -> String {
         "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
     }

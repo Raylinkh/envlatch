@@ -5,8 +5,6 @@ script_dir="${0:A:h}"
 project_root="${script_dir:h}"
 version="0.1.0"
 app="$project_root/dist/EnvLatch.app"
-archive="$project_root/dist/EnvLatch-$version-macos.zip"
-checksum="$archive.sha256"
 signing_identity="${ENVLATCH_CODESIGN_IDENTITY:-}"
 notary_profile="${ENVLATCH_NOTARY_PROFILE:-}"
 
@@ -22,9 +20,12 @@ fi
 
 ENVLATCH_CODESIGN_IDENTITY="$signing_identity" "$script_dir/build-app.sh"
 codesign --verify --deep --strict --verbose=2 "$app"
+architecture=$(lipo -archs "$app/Contents/MacOS/EnvLatch" | tr " " "-")
+archive="$project_root/dist/EnvLatch-$version-macos-$architecture.zip"
+checksum="$archive.sha256"
 
 release_stage=$(mktemp -d)
-submission_archive="$release_stage/EnvLatch-$version-macos.zip"
+submission_archive="$release_stage/EnvLatch-$version-macos-$architecture.zip"
 ditto -c -k --sequesterRsrc --keepParent "$app" "$submission_archive"
 xcrun notarytool submit "$submission_archive" \
   --keychain-profile "$notary_profile" \
@@ -35,12 +36,15 @@ spctl --assess --type execute --verbose=2 "$app"
 
 if [[ -e "$archive" || -e "$checksum" ]]; then
   release_stamp=$(date +%Y%m%d-%H%M%S)
-  [[ ! -e "$archive" ]] || mv "$archive" "$project_root/dist/EnvLatch-$version-macos.previous-$release_stamp.zip"
-  [[ ! -e "$checksum" ]] || mv "$checksum" "$project_root/dist/EnvLatch-$version-macos.previous-$release_stamp.zip.sha256"
+  [[ ! -e "$archive" ]] || mv "$archive" "$project_root/dist/EnvLatch-$version-macos-$architecture.previous-$release_stamp.zip"
+  [[ ! -e "$checksum" ]] || mv "$checksum" "$project_root/dist/EnvLatch-$version-macos-$architecture.previous-$release_stamp.zip.sha256"
 fi
 
 ditto -c -k --sequesterRsrc --keepParent "$app" "$archive"
-shasum -a 256 "$archive" > "$checksum"
+(
+  cd "$project_root/dist"
+  shasum -a 256 "${archive:t}" > "${checksum:t}"
+)
 rm "$submission_archive"
 rmdir "$release_stage"
 

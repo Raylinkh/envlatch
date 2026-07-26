@@ -22,6 +22,11 @@ struct CLIApplicationTests {
         #expect(store.loadAllCallCount == 0)
     }
 
+    @Test func helpLabelsBroadRunAsExposingEverySavedKey() {
+        #expect(CLIApplication.usage.contains("Broad compatibility"))
+        #expect(CLIApplication.usage.contains("exposes every saved key"))
+    }
+
     @Test func listAndDoctorNeverReadSecretValues() throws {
         let store = RecordingSecretStore(
             names: [try CredentialName(validating: "OPENAI_API_KEY")],
@@ -189,10 +194,89 @@ struct CLIApplicationTests {
             launchProfileStore: launchStore
         )
 
-        #expect(throws: LaunchProfileError.self) {
+        #expect(throws: LaunchProfileError.conflictingSecretEnvironment(
+            name: "ANTHROPIC_AUTH_TOKEN",
+            first: "FIRST_API_KEY",
+            second: "SECOND_API_KEY"
+        )) {
             try application.prepareRun(profile: "Conflict", program: "true", arguments: [])
         }
         #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func configurationConflictFailsBeforeReadingAnySecret() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-config-conflict-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let endpointStore = EndpointProfileStore(fileURL: root.appendingPathComponent("endpoint-profiles.json"))
+        let first = try CredentialName(validating: "FIRST_API_KEY")
+        let second = try CredentialName(validating: "SECOND_API_KEY")
+        try endpointStore.upsert(
+            EndpointProfile(
+                providerName: "First",
+                credentialName: first,
+                contract: .anthropic,
+                baseURL: "https://first.example.com",
+                credentialEnvironmentName: CredentialName(validating: "FIRST_TARGET_TOKEN")
+            )
+        )
+        try endpointStore.upsert(
+            EndpointProfile(
+                providerName: "Second",
+                credentialName: second,
+                contract: .anthropic,
+                baseURL: "https://second.example.com",
+                credentialEnvironmentName: CredentialName(validating: "SECOND_TARGET_TOKEN")
+            )
+        )
+        let launchStore = LaunchProfileStore(fileURL: root.appendingPathComponent("launch-profiles.json"))
+        try launchStore.upsert(
+            LaunchProfile(name: "Conflict", credentialNames: [first, second])
+        )
+        let store = RecordingSecretStore(
+            names: [first, second],
+            values: [first.rawValue: "first", second.rawValue: "second"]
+        )
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: endpointStore,
+            launchProfileStore: launchStore
+        )
+
+        #expect(throws: LaunchProfileError.conflictingConfigurationEnvironment(
+            name: "ANTHROPIC_BASE_URL"
+        )) {
+            try application.prepareRun(profile: "Conflict", program: "true", arguments: [])
+        }
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func doctorFailsWhenCodeIdentityCannotBeRead() {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-doctor-identity-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = RecordingSecretStore(names: [], values: [:])
+        var errors: [String] = []
+        let application = CLIApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            inspector: InstallationInspector(
+                executableURL: URL(fileURLWithPath: "/Applications/EnvLatch.app/Contents/MacOS/EnvLatch"),
+                linkURL: URL(fileURLWithPath: "/tmp/missing-envlatch")
+            ),
+            pairedHostStore: PairedHostStore(fileURL: root.appendingPathComponent("paired.json")),
+            endpointProfileStore: EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json")),
+            launchProfileStore: LaunchProfileStore(fileURL: root.appendingPathComponent("launch.json")),
+            identityProvider: { "unavailable:test:-1" },
+            stdout: { _ in },
+            stderr: { errors.append($0) }
+        )
+
+        #expect(application.run(arguments: ["doctor"]) == 1)
+        #expect(errors.contains { $0.contains("code identity") })
         #expect(store.loadAllCallCount == 0)
     }
 

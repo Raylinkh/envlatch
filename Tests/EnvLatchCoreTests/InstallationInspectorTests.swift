@@ -81,6 +81,5 @@ struct InstallationInspectorTests {
         try Data("stale skill".utf8).write(to: skillFiles[0])
         #expect(inspector.pairingStatus() == .incomplete)
         #expect(inspector.pairCommand.contains(" pair \"<your agent or host name>\""))
-        #expect(inspector.bundleInvocation(program: "codex").hasSuffix(" run -- 'codex'"))
     }
 }

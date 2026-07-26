@@ -49,6 +49,8 @@ struct EndpointProfileStoreTests {
         ("Provider", "file:///tmp/key"),
         ("Provider", "http://api.example.com"),
         ("Provider", "https://user:password@example.com"),
+        ("Provider", "https://api.example.com/v1?api_key=secret"),
+        ("Provider", "https://api.example.com/v1#secret"),
     ])
     func rejectsInvalidProfiles(provider: String, baseURL: String) throws {
         #expect(throws: EndpointProfileError.self) {
@@ -72,22 +74,28 @@ struct EndpointProfileStoreTests {
         }
     }
 
-    @Test func profileLookupUsesOnlyTheDisplayedProfileName() throws {
+    @Test func duplicateProviderLabelsPreserveEachCredentialEndpoint() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("envlatch-profile-lookup-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = EndpointProfileStore(fileURL: root.appendingPathComponent("profiles.json"))
-        let profile = try EndpointProfile(
-            providerName: "OpenRouter",
-            credentialName: CredentialName(validating: "OPENROUTER_API_KEY"),
+        let first = try EndpointProfile(
+            providerName: "Compatible gateway",
+            credentialName: CredentialName(validating: "FIRST_API_KEY"),
             contract: .openAIResponses,
-            baseURL: "https://openrouter.ai/api/v1"
+            baseURL: "https://first.example.com/v1"
         )
-        try store.upsert(profile)
+        let second = try EndpointProfile(
+            providerName: "Compatible gateway",
+            credentialName: CredentialName(validating: "SECOND_API_KEY"),
+            contract: .openAIChat,
+            baseURL: "https://second.example.com/v1"
+        )
+        try store.upsert(first)
+        try store.upsert(second)
 
-        #expect(try store.profile(named: "OpenRouter") == profile)
-        #expect(throws: EndpointProfileError.self) {
-            try store.profile(named: "OPENROUTER_API_KEY")
-        }
+        #expect(try store.list().count == 2)
+        #expect(try store.endpoint(for: first.credentialName) == first)
+        #expect(try store.endpoint(for: second.credentialName) == second)
     }
 }

@@ -23,7 +23,7 @@ let package = Package(
         ),
         .testTarget(
             name: "EnvLatchCoreTests",
-            dependencies: ["EnvLatchCore"]
+            dependencies: ["EnvLatchCore", "EnvLatch"]
         ),
     ]
 )

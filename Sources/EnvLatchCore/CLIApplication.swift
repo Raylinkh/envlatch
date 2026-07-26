@@ -58,10 +58,11 @@ public struct CLIApplication {
                 let pairedHosts = try pairedHostStore.list()
                 let profiles = try endpointProfileStore.list()
                 let launchProfiles = try launchProfileStore.list()
+                let identity = identityProvider()
                 stdout("platform=macOS")
                 stdout("keychain_attribute_query=reachable")
                 stdout("saved_key_count=\(names.count)")
-                stdout("candidate_requirement=\(identityProvider())")
+                stdout("candidate_requirement=\(identity)")
                 stdout("cli_link=\(linkStatusDescription(inspector.linkStatus()))")
                 stdout("agent_pairing=\(pairingStatusDescription(inspector.pairingStatus()))")
                 stdout("paired_host_count=\(pairedHosts.count)")
@@ -69,6 +70,10 @@ public struct CLIApplication {
                 stdout("endpoint_profile_count=\(profiles.count)")
                 stdout("launch_profile_count=\(launchProfiles.count)")
                 stdout("pair_command=\(inspector.pairCommand)")
+                guard !identity.hasPrefix("unavailable:") else {
+                    stderr("error: EnvLatch could not read its code identity.")
+                    return 1
+                }
                 return 0
             case .version:
                 stdout("EnvLatch \(ProductInfo.version)")
@@ -193,9 +198,13 @@ public struct CLIApplication {
       envlatch doctor
       envlatch version
       envlatch pair <agent-or-host-name>
-      envlatch run -- <program> [args...]
-      envlatch run --using <profile-name> -- <program> [args...]
       envlatch help
+
+    Preferred least privilege:
+      envlatch run --using <profile-name> -- <program> [args...]
+
+    Broad compatibility (exposes every saved key):
+      envlatch run -- <program> [args...]
     """
 
     private func linkStatusDescription(_ status: CLILinkStatus) -> String {
