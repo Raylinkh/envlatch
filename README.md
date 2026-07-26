@@ -26,7 +26,7 @@ provider-specific command, proxy, or code change is required.
 - **Agent-friendly without revealing values.** The bundled portable skill
   teaches any agent or host to inspect non-secret profile names and wrap its
   normal command.
-- **Native and local.** Values stay in the non-synchronizing macOS login
+- **Native and local.** Values stay in the non-synchronizing macOS default
   Keychain. There is no server, account, sync layer, or custom cryptography.
 
 ## Install from source
@@ -91,7 +91,8 @@ record:
 - a display label;
 - API contract (`Anthropic`, `OpenAI Chat Completions`, `OpenAI Responses`, or
   `Gemini`);
-- HTTPS base URL, with plain HTTP allowed only for loopback development;
+- HTTPS base URL with no query or fragment, with plain HTTP allowed only for
+  loopback development;
 - the credential variable expected by the target client.
 
 A saved key can therefore remain `MINIMAX_API_KEY` while an Anthropic-compatible
