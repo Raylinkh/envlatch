@@ -1,25 +1,25 @@
 # EnvLatch v0.1.0 verification
 
-Date: 2026-07-26
+Date: 2026-07-27
 Platform: macOS arm64
-Code candidate: `8ce696d`
+Code candidate: `bb730af873a496a4d9a2074d72d6a82ede4820e0`
 
 ## Release verdict
 
-**PUBLIC-SOURCE BOUNDARY-READY**
+**READY FOR PUBLIC SOURCE AND AN EXPLICITLY UNSIGNED PREVIEW**
 
-The source candidate, app assembly, transactional installation, GUI-to-Keychain
-configuration, and installed two-selected/one-unselected execution path are
-verified. EnvLatch is ready to create and push as a public source repository.
-It is not yet published, and no downloadable binary is claimed; the current
-Mac has no Developer ID Application identity.
+The committed source, release build, transactional installer, direct saved-key
+path, optional multi-key groups, Keychain access behavior, and unsigned arm64
+DMG have current behavioral receipts. The DMG is suitable only as a clearly
+labeled GitHub prerelease: it is ad-hoc signed, not Developer ID signed or
+notarized, and Gatekeeper rejects it until the user chooses **Open Anyway**.
 
-## Exact-candidate product behavior
+## Exact-candidate tests
 
 `swift test` passed from the committed source:
 
 ```text
-43 tests
+46 tests
 14 suites
 0 failures
 exit=0
@@ -28,43 +28,77 @@ exit=0
 Coverage includes:
 
 - credential-name and value validation;
-- attribute-only Keychain listing with every list/item query pinned to the
-  user's exact default Keychain;
-- additions explicitly targeted to that same Keychain;
-- real default-Keychain add, replace, read, and idempotent cleanup under
-  isolated test services;
-- parser to named launch profile to two selected real-Keychain values, one
-  unselected sentinel, per-key Anthropic/OpenAI-compatible bindings, and direct
-  `execve`;
-- distinct provider records with the same display label;
-- refusal of endpoint URLs containing credentials, queries, or fragments;
-- symlink resolution to a canonical executable before any credential read;
-- direct-execution PID and literal-argument preservation;
-- missing-member and credential/configuration conflicts before secret reads;
-- transactional endpoint rollback when a Keychain save fails;
-- visible, redacted GUI behavior when Keychain access is denied;
-- refusal to delete a key referenced by a launch profile;
-- any-name host registration, installation inspection, and safe CLI parsing.
+- attribute-only Keychain listing pinned to the exact default Keychain;
+- real default-Keychain add, replace, read, and idempotent cleanup;
+- two consecutive reads of the same disposable item with
+  `LAContext.interactionNotAllowed = true`;
+- direct saved-key selection through real Keychain, endpoint alias/base-URL
+  mapping, and omission of an unselected sentinel;
+- an optional two-key group through parser, real Keychain, and direct `execve`,
+  with one unselected sentinel;
+- key/group name ambiguity failing before any secret read;
+- per-key Anthropic, OpenAI-compatible, and Gemini endpoint bindings;
+- endpoint URL validation and transactional metadata rollback;
+- canonical executable and symlink resolution before credential reads;
+- literal-argument and PID preservation without shell interpolation;
+- visible, redacted GUI failure handling;
+- optional key-group visibility rules and any-name host pairing.
 
-The purpose-built direct-execution child receives only expected digests and
-reports booleans, PID, and argument metadata. Secret values are not placed in
-arguments or test output.
+The test processes report only booleans, PID, and argument metadata. They never
+print a value or pass one as a command argument.
 
-## App assembly and installation
-
-The release build completed and the app bundle passed:
+Release checks also passed:
 
 ```text
+zsh -n scripts/*.sh
 Resources/Info.plist: OK
-EnvLatch 0.1.0
-AppIcon.icns=present
-codesign --verify --deep --strict=0
+git diff --check
+codesign --verify --deep --strict dist/EnvLatch.app
 architecture=arm64
+envlatch groups == envlatch profiles
+exit=0
 ```
 
-`scripts/install.sh` installed the exact code candidate to
-`~/Applications/EnvLatch.app`. The canonical CLI symlink resolves into that
-bundle. The install-time doctor passed before the app transaction committed:
+`profiles` remains a compatibility alias; `groups` is the public command.
+
+## Exact installed direct-key smoke
+
+`scripts/install.sh` installed the exact candidate to
+`~/Applications/EnvLatch.app`. The CLI resolves to that bundle, and its
+executable bytes match the assembled app:
+
+```text
+sha256=12e3ebccbbf1d5cd6dbcd61d8eab74993fdd021d0e64341e6ebc0ba74dd45ca1
+source_installed_hash_match=true
+cli_resolves_to=~/Applications/EnvLatch.app/Contents/MacOS/EnvLatch
+```
+
+The installed candidate was launched twice from a parent environment with the
+selected key, its alias, its base URL, and an unselected saved key explicitly
+absent. Both runs used the saved key name directly:
+
+```text
+envlatch run --using MINIMAX_API_KEY -- <local verifier>
+```
+
+Each run completed without user interaction or a passcode prompt and reported:
+
+```text
+selected_present=True
+alias_matches=True
+base_matches=True
+unselected_absent=True
+literal_argument_preserved=True
+exit=0
+```
+
+This proves the installed saved-key path reads only `MINIMAX_API_KEY`, exposes
+the same value through the configured Anthropic credential alias, injects
+`ANTHROPIC_BASE_URL=https://api.minimaxi.com/anthropic`, leaves
+`OPENROUTER_API_KEY` absent, and preserves literal arguments. The verifier made
+no network call and emitted no value or digest.
+
+The installed doctor reported:
 
 ```text
 platform=macOS
@@ -72,121 +106,102 @@ keychain_attribute_query=reachable
 saved_key_count=2
 cli_link=installed
 agent_pairing=paired
-paired_host_count=1
+paired_host_count=2
 endpoint_profile_count=1
 launch_profile_count=1
 ```
 
-The assembled and installed executable bytes are identical:
+Pairing records setup status only. Any valid agent or host name can pair; it
+does not authorize credential access.
+
+## Fresh-process UI receipt
+
+Two stale pre-change processes were identified by their exact executable paths,
+closed, and replaced with a fresh process from the installed candidate. The
+accessibility inspection then showed:
 
 ```text
-sha256=0e877b66efa542fdfe8ae34137db72155446427a79db139a55bdd8a3c191914a
+Key groups, Optional, 1
+state=collapsed
 ```
 
-The Codex, Claude Code, and Gemini CLI discovery links resolve to the same
-canonical `~/.agents/skills/envlatch` directory. They are conveniences rather
-than an allowlist; `envlatch pair <name>` accepts any valid agent or host name
-and does not authorize credential access.
+Expanding it showed the helper text, the existing group, and **New Key Group**.
+The footer says every saved key works directly with `--using KEY_NAME`, and the
+expanded setup prompt instructs any agent or host to:
 
-Isolated installer receipts cover initial install, upgrade, and injected
-failure. The failure case restored both current and legacy app paths. Pairing
-receipts cover first install, idempotent rerun, preflight failure, and forced
-post-install doctor failure; the latter restored the prior CLI, skill, and
-three discovery links. Staging residue was zero.
+1. inspect saved key names with `envlatch list`;
+2. inspect optional multi-key groups with `envlatch groups`;
+3. run `envlatch run --using <saved-key-or-group> -- <program> [args...]`;
+4. never silently fall back to broad `envlatch run --`.
 
-## Installed least-privilege credential smoke
+The live UI contains local key names, endpoint metadata, and paired-host names,
+so it is not used as the public screenshot. The README keeps the separate
+public-safe screenshot with empty credential fields.
 
-The exact installed GUI created a temporary disposable sentinel, configured a
-second non-secret endpoint binding without re-entering its existing value, and
-created a temporary launch profile selecting both existing keys but not the
-sentinel. The verifier was launched from a parent environment with all relevant
-credential, alias, and base-URL variables explicitly absent. It reported only:
+## Unsigned preview artifact
+
+`scripts/package-unsigned-preview.sh` created:
 
 ```text
-selected_a_present=True
-selected_b_present=True
-alias_a_matches=True
-alias_b_matches=True
-base_a_matches=True
-base_b_matches=True
-unselected_absent=True
-literal_argument_preserved=True
-pid_preserved=True
+dist/EnvLatch-0.1.0-macos-arm64-unsigned.dmg
+bytes=1903152
+sha256=933080e390a351988161620e37850a4d3bf4a5f28ba5685c40f2a9b16ed042d3
 ```
 
-That receipt proves both selected values were read from the default Keychain,
-mapped to their Anthropic- and OpenAI-compatible client variables, paired with
-their configured base URLs, and inherited like normal `.env` variables. The
-unselected item was not read; literal shell metacharacters were not
-interpreted; and the wrapper PID survived direct `execve`. The verifier never
-printed a value or received one in a command argument.
-
-Postflight cleanup removed the temporary launch profile and disposable
-Keychain item, removed the temporary second endpoint binding, and confirmed
-the original state:
+`scripts/verify-unsigned-preview.sh` passed:
 
 ```text
-saved_key_count=2
-endpoint_profile_count=1
-launch_profile_count=1
-temporary_state_absent=true
+dmg_payloads=4
+architecture=arm64
+signature=adhoc
+isolated_install=passed
+induced_failure_rollback=passed
+gatekeeper_expected_rejection_exit=3
+exit=0
 ```
 
-## Secret handling and repository hygiene
+The mounted DMG contains exactly:
 
-A controlled earlier verifier received the two existing values only in its
-process environment and recursively scanned the repository, Git history,
-build tree, and assembled app. It reported:
+- `EnvLatch.app`;
+- `Install EnvLatch.command`;
+- `UNSIGNED PREVIEW - READ ME.txt`;
+- `LICENSE.txt`.
 
-```text
-credential_values_present=True
-repo_secret_leak_hits=0
-```
+The verifier compared the mounted app and installer inputs with the assembled
+candidate, performed an isolated install, confirmed the installed CLI and
+skill links, injected an install failure, and confirmed rollback restored the
+previous app.
 
-The source contains no reveal, clipboard, export, `eval`, or `.env` command.
-Endpoint URLs reject embedded credentials, queries, and fragments before
-persistence, because profile metadata is displayed by safe inspection
-commands. Remaining `AgentKeyring` identifiers are the intentionally retained
-Keychain service, Application Support compatibility namespace, and legacy
-backup paths documented in `SPEC.md` and `SECURITY.md`.
+## Security and repository hygiene
 
-## Public repository surface
+EnvLatch has no reveal, clipboard, export, `eval`, or `.env` command. Endpoint
+metadata is non-secret and cannot contain URL credentials, queries, or
+fragments. Remaining `AgentKeyring` identifiers are the intentionally retained
+Keychain service, Application Support compatibility namespace, and migration
+paths documented in `SPEC.md` and `SECURITY.md`.
 
-Present and validated:
-
-- MIT `LICENSE`;
-- `SECURITY.md` with a private-reporting path and explicit threat boundary;
-- GitHub Actions on `macos-15` using the current `actions/checkout@v7`, with
-  tests, syntax checks, bundle assembly, version/icon checks, and code-sign
-  verification;
-- source-install and binary-release instructions that distinguish ad-hoc
-  source builds from trusted distribution;
-- a public-safe README screenshot with credential and host metadata removed;
-- a fail-closed `package-release.sh` that exits 64 without a Developer ID
-  identity and notary profile, derives the archive architecture from the
-  executable, and writes a portable checksum record.
-
-Outside the restricted reviewer sandbox, `gh auth status` succeeded for
-`Raylinkh` on 2026-07-26. `Raylinkh/envlatch` did not exist, and this local
-repository had no remote. Repository creation and public push have not been
-performed.
+The public surface includes an MIT license, security policy, macOS CI, source
+install instructions, an unsigned-preview warning, a public-safe screenshot,
+release notes, checksum generation, and fail-closed Developer ID/notary
+packaging for a future trusted release.
 
 ## Known boundaries
 
-- `spctl --assess` rejects the installed candidate because it is ad-hoc signed.
-- The current Mac has zero valid code-signing identities.
-- A downloadable binary must not be published until Developer ID signing,
-  notarization, stapling, Gatekeeper assessment, and checksum generation all
-  succeed through `scripts/package-release.sh`.
+- `spctl --assess --type execute` rejects the candidate (exit 3) because it is
+  ad-hoc signed.
+- This Mac has no valid Developer ID Application identity and no notarization
+  profile. The unsigned DMG requires **Privacy & Security → Open Anyway**.
+- The same installed executable read the same saved item repeatedly without a
+  prompt. Rebuilding or replacing an ad-hoc-signed executable can change its
+  Keychain identity and cause one authorization prompt per existing key.
+  Developer ID signing is the durable upgrade-stable fix.
 - EnvLatch injects environment variables; it is not an egress proxy or
   sandbox. The launched process and descendants can read selected values.
-- Least privilege applies to EnvLatch-managed Keychain reads. The caller's
-  inherited environment is preserved and is not scrubbed.
-- The trusted-application ACL gives the EnvLatch executable prompt-free access
-  after authorization. Keychain may still let a user approve another client
-  interactively. The file-based Keychain ACL APIs are deprecated; a stable
-  Developer ID identity is the supported binary-distribution path.
+- The caller's inherited environment is preserved. Unselected EnvLatch items
+  are not read, but pre-existing parent variables are not scrubbed.
+- The file-based Keychain ACL APIs are deprecated. They are used for the
+  trusted-executable behavior and require ongoing macOS compatibility testing.
 
-Any change to Keychain queries, profile resolution, environment construction,
-execution, signing, bundle layout, installer migration, or the release script
-invalidates the relevant receipt above.
+Any change to Keychain queries, saved-key/group resolution, environment
+construction, execution, signing, bundle layout, installer migration, or
+release packaging invalidates the corresponding receipt above.
