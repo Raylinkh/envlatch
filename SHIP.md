@@ -6,11 +6,12 @@ Wedge: One Mac user stores API credentials in macOS Keychain and uses `envlatch 
 Product contract: [SPEC.md](SPEC.md)
 Acceptance source: [VERIFICATION.md — Release verdict](VERIFICATION.md#release-verdict)
 Deferred: Cloud sync, teams, secret reveal/export, provider calls, proxying, model routing, per-agent policy, biometric-per-read, decorative branding, and a friction-free notarized binary until a Developer ID identity is available.
-Shipped: no
+Shipped: yes — 2026-07-27
 
-## Owner-gated publication steps
+## Publication receipt
 
-- Create the public `envlatch` repository and push the verified source commit.
-- Enable GitHub private vulnerability reporting after repository creation.
-- Attach the explicitly labeled unsigned arm64 preview DMG and checksum to a prerelease.
-- For a trusted downloadable binary release, install a Developer ID Application identity and configure an Apple notary profile.
+- Public source: https://github.com/Raylinkh/envlatch
+- Unsigned arm64 prerelease: https://github.com/Raylinkh/envlatch/releases/tag/v0.1.0
+- Remote asset checksum and first public macOS CI run verified.
+- GitHub private vulnerability reporting enabled.
+- Trusted binary remains deferred until a Developer ID Application identity and Apple notary profile are available.

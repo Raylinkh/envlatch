@@ -185,6 +185,32 @@ install instructions, an unsigned-preview warning, a public-safe screenshot,
 release notes, checksum generation, and fail-closed Developer ID/notary
 packaging for a future trusted release.
 
+## Published surface
+
+The verified source and prerelease are public:
+
+- repository: https://github.com/Raylinkh/envlatch
+- tag and prerelease: https://github.com/Raylinkh/envlatch/releases/tag/v0.1.0
+- release assets: the unsigned arm64 DMG and adjacent SHA-256 checksum
+- repository visibility: public
+- private vulnerability reporting: enabled
+
+The two release assets were downloaded back from GitHub into a new temporary
+directory. `shasum -a 256 -c` returned `OK`, and the remote DMG digest matched
+`933080e390a351988161620e37850a4d3bf4a5f28ba5685c40f2a9b16ed042d3`.
+
+The first public `main` CI run passed on macOS:
+
+```text
+CI run=30213359553
+checkout=passed
+script_and_metadata_validation=passed
+tests=passed
+app_bundle_verification=passed
+unsigned_preview_packaging=passed
+conclusion=success
+```
+
 ## Known boundaries
 
 - `spctl --assess --type execute` rejects the candidate (exit 3) because it is
