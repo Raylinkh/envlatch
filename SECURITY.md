@@ -26,7 +26,7 @@ vulnerability.
 
 ## Security boundary
 
-EnvLatch stores credential values in the user's non-synchronizing login
+EnvLatch stores credential values in the user's non-synchronizing default
 Keychain and releases them only as environment variables of an explicitly
 launched process. It has no command to reveal, export, or copy stored values.
 
