@@ -48,4 +48,7 @@ Keychain access-control lists.
 Source installs are ad-hoc signed unless a signing identity is supplied.
 Rebuilding an ad-hoc-signed app can trigger a new Keychain authorization
 prompt. Downloadable binary releases must be Developer ID signed, notarized,
-and stapled before they are described as trusted downloads.
+and stapled before they are described as trusted downloads. An asset explicitly
+named and documented as an unsigned preview is not a trusted download: verify
+its SHA-256 checksum, expect Gatekeeper's Open Anyway flow, and add credentials
+only after installation from the verified artifact.

@@ -177,9 +177,30 @@ builds the app, and verifies its structural code signature.
 
 ## Binary releases
 
-No downloadable binary is claimed until it has been Developer ID signed,
-notarized by Apple, stapled, and assessed by Gatekeeper. A maintainer with those
-credentials can prepare one with:
+### Unsigned preview
+
+The GitHub `v0.1.0` pre-release includes an explicitly labeled, ad-hoc-signed
+arm64 DMG and adjacent SHA-256 checksum. It is a convenience build for testers,
+not an Apple-verified distribution. Gatekeeper will require **Privacy &
+Security → Open Anyway** for the installer and may require it again for the
+app.
+
+Download both release assets and verify before mounting:
+
+```sh
+shasum -a 256 -c EnvLatch-0.1.0-macos-arm64-unsigned.dmg.sha256
+```
+
+The DMG contains `Install EnvLatch.command`, which transactionally installs the
+app under `~/Applications`, the CLI under `~/.local/bin`, and the shared skill
+under `~/.agents/skills`. Only use Open Anyway for a checksum-verified asset
+downloaded from the official EnvLatch release.
+
+### Notarized release
+
+No friction-free downloadable binary is claimed until it has been Developer ID
+signed, notarized by Apple, stapled, and assessed by Gatekeeper. A maintainer
+with those credentials can prepare one with:
 
 ```sh
 ENVLATCH_CODESIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
@@ -187,8 +208,9 @@ ENVLATCH_NOTARY_PROFILE="envlatch-notary" \
 ./scripts/package-release.sh
 ```
 
-The script emits a notarized zip and SHA-256 checksum under `dist/`. Source
-installation remains the v0.1 distribution path until that receipt exists.
+The script emits a notarized zip and SHA-256 checksum under `dist/`. The
+unsigned DMG and source install remain preview distribution paths until that
+receipt exists.
 
 ## License
 
