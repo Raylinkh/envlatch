@@ -35,24 +35,27 @@ rollback_install() {
   fi
 
   set +e
-  if (( installed_new_app )) && [[ -e "$installed_app" ]]; then
+  if (( installed_new_app )) &&
+      [[ -e "$installed_app" || -L "$installed_app" ]]; then
     mv "$installed_app" "$application_dir/EnvLatch.failed-$install_stamp.app"
   fi
-  if (( installed_was_backed_up )) && [[ -e "$installed_backup" ]]; then
+  if (( installed_was_backed_up )) &&
+      [[ -e "$installed_backup" || -L "$installed_backup" ]]; then
     mv "$installed_backup" "$installed_app"
   fi
-  if (( legacy_was_backed_up )) && [[ -e "$legacy_backup" ]]; then
+  if (( legacy_was_backed_up )) &&
+      [[ -e "$legacy_backup" || -L "$legacy_backup" ]]; then
     mv "$legacy_backup" "$legacy_app"
   fi
   return "$exit_status"
 }
 trap rollback_install EXIT
 
-if [[ -e "$installed_app" ]]; then
+if [[ -e "$installed_app" || -L "$installed_app" ]]; then
   mv "$installed_app" "$installed_backup"
   installed_was_backed_up=1
 fi
-if [[ -e "$legacy_app" ]]; then
+if [[ -e "$legacy_app" || -L "$legacy_app" ]]; then
   mv "$legacy_app" "$legacy_backup"
   legacy_was_backed_up=1
 fi

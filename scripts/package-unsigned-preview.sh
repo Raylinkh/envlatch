@@ -38,6 +38,7 @@ install -m 755 "$script_dir/install-preview.sh" "$stage/Install EnvLatch.command
 install -m 644 \
   "$project_root/Resources/UnsignedPreview.txt" \
   "$stage/UNSIGNED PREVIEW - READ ME.txt"
+install -m 644 "$project_root/LICENSE" "$stage/LICENSE.txt"
 
 hdiutil create \
   -volname "EnvLatch $version Unsigned Preview" \

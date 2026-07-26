@@ -22,7 +22,7 @@ jobs:
 
       - name: Validate scripts and metadata
         run: |
-          zsh -n scripts/build-app.sh scripts/install.sh scripts/install-preview.sh scripts/pair-agents.sh scripts/package-release.sh scripts/package-unsigned-preview.sh
+          zsh -n scripts/build-app.sh scripts/install.sh scripts/install-preview.sh scripts/pair-agents.sh scripts/package-release.sh scripts/package-unsigned-preview.sh scripts/verify-unsigned-preview.sh
           plutil -lint Resources/Info.plist
           git diff --check
 
@@ -39,9 +39,4 @@ jobs:
       - name: Package unsigned preview
         run: |
           ./scripts/package-unsigned-preview.sh
-          dmg="$(find dist -maxdepth 1 -name 'EnvLatch-0.1.0-macos-*-unsigned.dmg' -print -quit)"
-          test -n "$dmg"
-          hdiutil verify "$dmg"
-          artifact="$(basename "$dmg")"
-          cd dist
-          shasum -a 256 -c "$artifact.sha256"
+          ./scripts/verify-unsigned-preview.sh

@@ -140,7 +140,18 @@ for (( index=1; index<=${#skill_links}; index++ )); do
 done
 
 if [[ "${ENVLATCH_VERIFY_INSTALL:-0}" == "1" ]]; then
-  "$cli_link" doctor
+  doctor_output=$("$cli_link" doctor)
+  print -r -- "$doctor_output"
+  cli_installed=0
+  agent_paired=0
+  for doctor_line in "${(@f)doctor_output}"; do
+    [[ "$doctor_line" != "cli_link=installed" ]] || cli_installed=1
+    [[ "$doctor_line" != "agent_pairing=paired" ]] || agent_paired=1
+  done
+  if (( ! cli_installed || ! agent_paired )); then
+    echo "EnvLatch installation verification did not report installed CLI and paired agent setup." >&2
+    exit 1
+  fi
 fi
 
 rollback_active=0
