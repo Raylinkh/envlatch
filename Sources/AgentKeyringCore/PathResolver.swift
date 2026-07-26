@@ -38,10 +38,10 @@ public enum PathResolver {
 
         if program.contains("/") {
             let absolutePath = absoluteStandardizedPath(program)
-            guard isExecutableRegularFile(absolutePath) else {
+            guard let executablePath = canonicalExecutablePath(absolutePath) else {
                 throw PathResolutionError.notExecutable(absolutePath)
             }
-            return absolutePath
+            return executablePath
         }
 
         guard let inheritedPath, !inheritedPath.isEmpty else {
@@ -57,8 +57,8 @@ public enum PathResolver {
             let candidate = URL(fileURLWithPath: String(directory), isDirectory: true)
                 .appendingPathComponent(program)
                 .standardizedFileURL.path
-            if isExecutableRegularFile(candidate) {
-                return candidate
+            if let executablePath = canonicalExecutablePath(candidate) {
+                return executablePath
             }
         }
 
@@ -75,13 +75,16 @@ public enum PathResolver {
         ).standardizedFileURL.path
     }
 
-    private static func isExecutableRegularFile(_ path: String) -> Bool {
-        guard access(path, X_OK) == 0,
-              let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+    private static func canonicalExecutablePath(_ path: String) -> String? {
+        let resolvedPath = URL(fileURLWithPath: path)
+            .resolvingSymlinksInPath()
+            .standardizedFileURL.path
+        guard access(resolvedPath, X_OK) == 0,
+              let attributes = try? FileManager.default.attributesOfItem(atPath: resolvedPath),
               let type = attributes[.type] as? FileAttributeType
         else {
-            return false
+            return nil
         }
-        return type == .typeRegular
+        return type == .typeRegular ? resolvedPath : nil
     }
 }

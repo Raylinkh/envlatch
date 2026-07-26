@@ -59,7 +59,7 @@ struct CLIApplicationTests {
         #expect(store.loadAllCallCount == 1)
     }
 
-    @Test func profileRunLoadsOneKeyAndDerivesContractEnvironment() throws {
+    @Test func profileRunLoadsOnlySelectedKeysAndDerivesEachEndpointEnvironment() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("agent-keyring-profile-run-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -72,24 +72,45 @@ struct CLIApplicationTests {
                 baseURL: "https://api.minimaxi.com/anthropic"
             )
         )
+        try profileStore.upsert(
+            EndpointProfile(
+                providerName: "OpenRouter",
+                credentialName: try CredentialName(validating: "OPENROUTER_API_KEY"),
+                contract: .openAIResponses,
+                baseURL: "https://openrouter.ai/api/v1"
+            )
+        )
+        let launchProfileStore = LaunchProfileStore(fileURL: root.appendingPathComponent("launch-profiles.json"))
+        try launchProfileStore.upsert(
+            LaunchProfile(
+                name: "Backend",
+                credentialNames: [
+                    try CredentialName(validating: "MINIMAX_API_KEY"),
+                    try CredentialName(validating: "OPENROUTER_API_KEY"),
+                ]
+            )
+        )
         let store = RecordingSecretStore(
             names: [
                 try CredentialName(validating: "MINIMAX_API_KEY"),
-                try CredentialName(validating: "OPENAI_API_KEY"),
+                try CredentialName(validating: "OPENROUTER_API_KEY"),
+                try CredentialName(validating: "UNSELECTED_API_KEY"),
             ],
             values: [
                 "MINIMAX_API_KEY": "minimax-secret",
-                "OPENAI_API_KEY": "other-secret",
+                "OPENROUTER_API_KEY": "openrouter-secret",
+                "UNSELECTED_API_KEY": "unselected-secret",
             ]
         )
         let application = makeApplication(
             store: store,
             environment: ["PATH": "/usr/bin:/bin"],
-            endpointProfileStore: profileStore
+            endpointProfileStore: profileStore,
+            launchProfileStore: launchProfileStore
         )
 
         let plan = try application.prepareRun(
-            profile: "MiniMax Anthropic",
+            profile: "Backend",
             program: "true",
             arguments: []
         )
@@ -97,8 +118,63 @@ struct CLIApplicationTests {
         #expect(plan.environment["MINIMAX_API_KEY"] == "minimax-secret")
         #expect(plan.environment["ANTHROPIC_AUTH_TOKEN"] == "minimax-secret")
         #expect(plan.environment["ANTHROPIC_BASE_URL"] == "https://api.minimaxi.com/anthropic")
-        #expect(plan.environment["OPENAI_API_KEY"] == nil)
-        #expect(store.loadedNames == [try CredentialName(validating: "MINIMAX_API_KEY")])
+        #expect(plan.environment["OPENROUTER_API_KEY"] == "openrouter-secret")
+        #expect(plan.environment["OPENAI_API_KEY"] == "openrouter-secret")
+        #expect(plan.environment["OPENAI_BASE_URL"] == "https://openrouter.ai/api/v1")
+        #expect(plan.environment["UNSELECTED_API_KEY"] == nil)
+        #expect(store.loadedNames == [
+            try CredentialName(validating: "MINIMAX_API_KEY"),
+            try CredentialName(validating: "OPENROUTER_API_KEY"),
+        ])
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func profileConflictFailsBeforeReadingAnySecret() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-keyring-profile-conflict-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let endpointStore = EndpointProfileStore(fileURL: root.appendingPathComponent("endpoint-profiles.json"))
+        for (provider, credential, baseURL) in [
+            ("First", "FIRST_API_KEY", "https://first.example.com"),
+            ("Second", "SECOND_API_KEY", "https://second.example.com"),
+        ] {
+            try endpointStore.upsert(
+                EndpointProfile(
+                    providerName: provider,
+                    credentialName: CredentialName(validating: credential),
+                    contract: .anthropic,
+                    baseURL: baseURL
+                )
+            )
+        }
+        let launchStore = LaunchProfileStore(fileURL: root.appendingPathComponent("launch-profiles.json"))
+        try launchStore.upsert(
+            LaunchProfile(
+                name: "Conflict",
+                credentialNames: [
+                    try CredentialName(validating: "FIRST_API_KEY"),
+                    try CredentialName(validating: "SECOND_API_KEY"),
+                ]
+            )
+        )
+        let store = RecordingSecretStore(
+            names: [
+                try CredentialName(validating: "FIRST_API_KEY"),
+                try CredentialName(validating: "SECOND_API_KEY"),
+            ],
+            values: ["FIRST_API_KEY": "first", "SECOND_API_KEY": "second"]
+        )
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: endpointStore,
+            launchProfileStore: launchStore
+        )
+
+        #expect(throws: LaunchProfileError.self) {
+            try application.prepareRun(profile: "Conflict", program: "true", arguments: [])
+        }
+        #expect(store.loadedNames.isEmpty)
         #expect(store.loadAllCallCount == 0)
     }
 
@@ -139,7 +215,8 @@ struct CLIApplicationTests {
     private func makeApplication(
         store: RecordingSecretStore,
         environment: [String: String],
-        endpointProfileStore: EndpointProfileStore? = nil
+        endpointProfileStore: EndpointProfileStore? = nil,
+        launchProfileStore: LaunchProfileStore? = nil
     ) -> CLIApplication {
         CLIApplication(
             store: store,
@@ -150,6 +227,9 @@ struct CLIApplicationTests {
             ),
             endpointProfileStore: endpointProfileStore ?? EndpointProfileStore(
                 fileURL: URL(fileURLWithPath: "/tmp/agent-keyring-missing-profiles-\(UUID().uuidString).json")
+            ),
+            launchProfileStore: launchProfileStore ?? LaunchProfileStore(
+                fileURL: URL(fileURLWithPath: "/tmp/agent-keyring-missing-launch-profiles-\(UUID().uuidString).json")
             ),
             identityProvider: { "identifier test" },
             stdout: { _ in },

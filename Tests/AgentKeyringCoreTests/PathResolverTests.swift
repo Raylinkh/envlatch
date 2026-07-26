@@ -12,6 +12,24 @@ struct PathResolverTests {
         #expect(try PathResolver.resolve(program: "/usr/bin/true", inheritedPath: nil) == "/usr/bin/true")
     }
 
+    @Test func resolvesExecutableSymlinkToCanonicalRegularFile() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("agent-keyring-symlink-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let target = root.appendingPathComponent("real-agent")
+        let link = root.appendingPathComponent("agent-tool")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: target)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: target.path)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        #expect(
+            try PathResolver.resolve(program: "agent-tool", inheritedPath: root.path)
+                == target.resolvingSymlinksInPath().standardizedFileURL.path
+        )
+    }
+
     @Test func rejectsMissingNonExecutableAndEmptyPathSegments() throws {
         let temporaryFile = FileManager.default.temporaryDirectory
             .appendingPathComponent("agent-keyring-nonexec-\(UUID().uuidString)")

@@ -6,6 +6,8 @@ struct VaultView: View {
     @StateObject private var model = VaultViewModel()
     @State private var editor: KeyEditorState?
     @State private var pendingDeletion: CredentialName?
+    @State private var launchProfileEditor: LaunchProfileEditorState?
+    @State private var pendingLaunchProfileDeletion: LaunchProfile?
     @State private var copiedCommand: String?
     @State private var setupExpanded = true
     @State private var pairedHosts: [PairedHost] = []
@@ -32,6 +34,13 @@ struct VaultView: View {
                 }
             )
         }
+        .sheet(item: $launchProfileEditor) { state in
+            LaunchProfileEditorSheet(
+                availableCredentials: model.names,
+                existingProfile: state.profile,
+                onSave: model.saveLaunchProfile
+            )
+        }
         .alert(
             "Delete \(pendingDeletion?.rawValue ?? "key")?",
             isPresented: Binding(
@@ -49,6 +58,24 @@ struct VaultView: View {
             }
         } message: { _ in
             Text("This permanently removes the value from your login Keychain.")
+        }
+        .alert(
+            "Delete launch profile \(pendingLaunchProfileDeletion?.name ?? "profile")?",
+            isPresented: Binding(
+                get: { pendingLaunchProfileDeletion != nil },
+                set: { if !$0 { pendingLaunchProfileDeletion = nil } }
+            ),
+            presenting: pendingLaunchProfileDeletion
+        ) { profile in
+            Button("Delete", role: .destructive) {
+                model.deleteLaunchProfile(profile)
+                pendingLaunchProfileDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                pendingLaunchProfileDeletion = nil
+            }
+        } message: { _ in
+            Text("Saved keys remain in Keychain.")
         }
         .alert(
             "AgentKeyring couldn't complete that action",
@@ -124,18 +151,50 @@ struct VaultView: View {
             .padding(32)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            List(model.names, id: \.rawValue) { name in
-                KeyRow(
-                    name: name,
-                    profile: model.profile(for: name),
-                    onEdit: {
-                        editor = KeyEditorState(
-                            existingName: name,
-                            profile: model.profile(for: name)
+            List {
+                Section("Saved keys") {
+                    ForEach(model.names, id: \.rawValue) { name in
+                        KeyRow(
+                            name: name,
+                            profile: model.profile(for: name),
+                            onEdit: {
+                                editor = KeyEditorState(
+                                    existingName: name,
+                                    profile: model.profile(for: name)
+                                )
+                            },
+                            onDelete: { pendingDeletion = name }
                         )
-                    },
-                    onDelete: { pendingDeletion = name }
-                )
+                    }
+                }
+
+                Section {
+                    if model.launchProfiles.isEmpty {
+                        Text("Create a profile to launch with only the keys a command needs.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(model.launchProfiles) { profile in
+                            LaunchProfileRow(
+                                profile: profile,
+                                onEdit: { launchProfileEditor = LaunchProfileEditorState(profile: profile) },
+                                onDelete: { pendingLaunchProfileDeletion = profile }
+                            )
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Launch profiles")
+                        Spacer()
+                        Button {
+                            launchProfileEditor = LaunchProfileEditorState(profile: nil)
+                        } label: {
+                            Label("New Profile", systemImage: "plus")
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityHint("Creates a named least-privilege set of saved keys")
+                    }
+                }
             }
             .listStyle(.inset)
             .accessibilityLabel("Saved API keys")
@@ -155,7 +214,7 @@ struct VaultView: View {
             )
 
             Label(
-                "Every saved key is available to the launched process and its children.",
+                "Use a launch profile for least privilege. Broad `run --` exposes every saved key.",
                 systemImage: "exclamationmark.shield"
             )
             .font(.caption)
@@ -219,6 +278,37 @@ private struct KeyRow: View {
             }
             .buttonStyle(.borderless)
             .accessibilityLabel("Delete \(name.rawValue)")
+        }
+        .padding(.vertical, 6)
+    }
+}
+
+private struct LaunchProfileRow: View {
+    let profile: LaunchProfile
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "switch.2")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(profile.name)
+                    .font(.body.weight(.medium))
+                Text(profile.credentialNames.map(\.rawValue).joined(separator: ", "))
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            Spacer()
+            Button("Edit", action: onEdit)
+                .buttonStyle(.borderless)
+            Button(role: .destructive, action: onDelete) {
+                Image(systemName: "trash")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Delete launch profile \(profile.name)")
         }
         .padding(.vertical, 6)
     }
@@ -358,6 +448,123 @@ private struct KeyEditorState: Identifiable {
     let id = UUID()
     let existingName: CredentialName?
     let profile: EndpointProfile?
+}
+
+private struct LaunchProfileEditorState: Identifiable {
+    let id = UUID()
+    let profile: LaunchProfile?
+}
+
+private struct LaunchProfileEditorSheet: View {
+    let availableCredentials: [CredentialName]
+    let existingProfile: LaunchProfile?
+    let onSave: (LaunchProfile) -> Bool
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String
+    @State private var selectedCredentials: Set<CredentialName>
+    @State private var attemptedSave = false
+    @FocusState private var nameFocused: Bool
+
+    init(
+        availableCredentials: [CredentialName],
+        existingProfile: LaunchProfile?,
+        onSave: @escaping (LaunchProfile) -> Bool
+    ) {
+        self.availableCredentials = availableCredentials
+        self.existingProfile = existingProfile
+        self.onSave = onSave
+        _name = State(initialValue: existingProfile?.name ?? "")
+        _selectedCredentials = State(initialValue: Set(existingProfile?.credentialNames ?? []))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(existingProfile == nil ? "New launch profile" : "Edit launch profile")
+                    .font(.title3.weight(.semibold))
+                Text("Select exactly the keys this command or backend needs. Values stay hidden in Keychain.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text("Profile name")
+                    .font(.callout.weight(.medium))
+                TextField("Backend", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .focused($nameFocused)
+                    .disabled(existingProfile != nil)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Available keys")
+                    .font(.callout.weight(.medium))
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 9) {
+                        ForEach(availableCredentials, id: \.rawValue) { credential in
+                            Toggle(
+                                credential.rawValue,
+                                isOn: Binding(
+                                    get: { selectedCredentials.contains(credential) },
+                                    set: { selected in
+                                        if selected {
+                                            selectedCredentials.insert(credential)
+                                        } else {
+                                            selectedCredentials.remove(credential)
+                                        }
+                                    }
+                                )
+                            )
+                            .font(.system(.body, design: .monospaced))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 220)
+                .padding(10)
+                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 7))
+            }
+
+            if attemptedSave, let validationError {
+                Text(validationError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Save Profile") {
+                    attemptedSave = true
+                    guard let profile = try? makeProfile(), validationError == nil else { return }
+                    if onSave(profile) {
+                        dismiss()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 520)
+        .onAppear { nameFocused = existingProfile == nil }
+    }
+
+    private var validationError: String? {
+        do {
+            _ = try makeProfile()
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    private func makeProfile() throws -> LaunchProfile {
+        let ordered = availableCredentials.filter(selectedCredentials.contains)
+        return try LaunchProfile(name: name, credentialNames: ordered)
+    }
 }
 
 private struct KeyEditorSheet: View {

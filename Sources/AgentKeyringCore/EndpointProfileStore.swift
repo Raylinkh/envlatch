@@ -32,6 +32,10 @@ public struct EndpointProfileStore: Sendable {
         return match
     }
 
+    public func endpoint(for credentialName: CredentialName) throws -> EndpointProfile? {
+        try list().first { $0.credentialName == credentialName }
+    }
+
     public func upsert(_ profile: EndpointProfile) throws {
         var profiles = try list().filter {
             $0.credentialName != profile.credentialName
