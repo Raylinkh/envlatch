@@ -2,7 +2,7 @@
 
 Exposure surface: https://github.com/Raylinkh/envlatch
 Target ship date: 2026-07-29
-Wedge: One Mac user stores API credentials in macOS Keychain and uses `envlatch run --using <profile> -- …` to launch any local command with one named, least-privilege environment without writing a `.env` file.
+Wedge: One Mac user stores API credentials in macOS Keychain and uses `envlatch run --using <saved-key-or-group> -- …` to launch any local command with a least-privilege environment without writing a `.env` file.
 Product contract: [SPEC.md](SPEC.md)
 Acceptance source: [VERIFICATION.md — Release verdict](VERIFICATION.md#release-verdict)
 Deferred: Cloud sync, teams, secret reveal/export, provider calls, proxying, model routing, per-agent policy, biometric-per-read, decorative branding, and a friction-free notarized binary until a Developer ID identity is available.

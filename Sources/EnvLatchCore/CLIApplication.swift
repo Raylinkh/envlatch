@@ -114,7 +114,7 @@ public struct CLIApplication {
     }
 
     public func prepareRun(
-        profile profileIdentifier: String?,
+        profile selectionIdentifier: String?,
         program: String,
         arguments: [String]
     ) throws -> ExecutionPlan {
@@ -125,12 +125,34 @@ public struct CLIApplication {
 
         let credentials: [String: String]
         let configuration: [String: String]
-        if let profileIdentifier {
-            let launchProfile = try launchProfileStore.profile(named: profileIdentifier)
-            let available = Set(try store.listNames())
-            for credential in launchProfile.credentialNames where !available.contains(credential) {
+        if let selectionIdentifier {
+            let availableNames = try store.listNames()
+            let exactCredential = availableNames.first {
+                $0.rawValue == selectionIdentifier
+            }
+            let matchingGroup = try launchProfileStore.list().first {
+                $0.name.caseInsensitiveCompare(selectionIdentifier) == .orderedSame
+            }
+            if exactCredential != nil, matchingGroup != nil {
+                throw LaunchProfileError.ambiguousSelection(selectionIdentifier)
+            }
+
+            let selectedNames: [CredentialName]
+            let selectionName: String
+            if let exactCredential {
+                selectedNames = [exactCredential]
+                selectionName = exactCredential.rawValue
+            } else if let matchingGroup {
+                selectedNames = matchingGroup.credentialNames
+                selectionName = matchingGroup.name
+            } else {
+                throw LaunchProfileError.profileNotFound(selectionIdentifier)
+            }
+
+            let available = Set(availableNames)
+            for credential in selectedNames where !available.contains(credential) {
                 throw LaunchProfileError.missingCredential(
-                    profile: launchProfile.name,
+                    profile: selectionName,
                     credential: credential.rawValue
                 )
             }
@@ -142,7 +164,7 @@ public struct CLIApplication {
             var resolvedConfiguration: [String: String] = [:]
             var bindings: [(source: CredentialName, targets: [String])] = []
 
-            for source in launchProfile.credentialNames {
+            for source in selectedNames {
                 let endpoint = endpoints[source]
                 let targets = endpoint?.secretEnvironmentNames ?? [source.rawValue]
                 for target in targets {
@@ -194,14 +216,14 @@ public struct CLIApplication {
     public static let usage = """
     Usage:
       envlatch list
-      envlatch profiles
+      envlatch groups
       envlatch doctor
       envlatch version
       envlatch pair <agent-or-host-name>
       envlatch help
 
     Preferred least privilege:
-      envlatch run --using <profile-name> -- <program> [args...]
+      envlatch run --using <saved-key-or-group> -- <program> [args...]
 
     Broad compatibility (exposes every saved key):
       envlatch run -- <program> [args...]

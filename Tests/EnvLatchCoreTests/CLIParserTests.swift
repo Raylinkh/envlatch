@@ -6,6 +6,7 @@ struct CLIParserTests {
     @Test func parsesSafeCommands() throws {
         #expect(try CLIParser.parse(["list"]) == .list)
         #expect(try CLIParser.parse(["profiles"]) == .profiles)
+        #expect(try CLIParser.parse(["groups"]) == .profiles)
         #expect(try CLIParser.parse(["doctor"]) == .doctor)
         #expect(try CLIParser.parse(["version"]) == .version)
         #expect(try CLIParser.parse(["--version"]) == .version)
@@ -36,6 +37,7 @@ struct CLIParserTests {
         ["pair"],
         ["list", "extra"],
         ["profiles", "extra"],
+        ["groups", "extra"],
         ["version", "extra"],
         ["--version", "extra"],
     ])

@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import LocalAuthentication
 import Security
 import Testing
 @testable import EnvLatchCore
@@ -104,21 +105,33 @@ struct KeychainSecretStoreTests {
 
         try store.save(name: name, value: "replacement-disposable-canary")
         #expect(try store.loadAll() == [name.rawValue: "replacement-disposable-canary"])
+        var promptFreeQuery = KeychainQueryFactory.item(
+            service: service,
+            name: name,
+            keychain: try defaultKeychain()
+        )
+        promptFreeQuery[kSecReturnData as String] = true
+        let promptFreeContext = LAContext()
+        promptFreeContext.interactionNotAllowed = true
+        promptFreeQuery[kSecUseAuthenticationContext as String] = promptFreeContext
+        for _ in 0..<2 {
+            var result: CFTypeRef?
+            #expect(SecItemCopyMatching(promptFreeQuery as CFDictionary, &result) == errSecSuccess)
+            #expect(result as? Data == Data("replacement-disposable-canary".utf8))
+        }
 
         try store.delete(name: name)
         try store.delete(name: name)
         #expect(try store.listNames().isEmpty)
     }
 
-    @Test func realKeychainLaunchProfileReadsTwoSelectedAndOmitsUnselected() throws {
+    @Test func realKeychainDirectSavedKeyAppliesEndpointAndOmitsUnselected() throws {
         let service = "dev.envlatch.tests.\(UUID().uuidString)"
         let store = KeychainSecretStore(service: service)
-        let selectedA = try CredentialName(validating: "ENVLATCH_SELECTED_A_TOKEN")
-        let selectedB = try CredentialName(validating: "ENVLATCH_SELECTED_B_TOKEN")
+        let selected = try CredentialName(validating: "ENVLATCH_SELECTED_TOKEN")
         let unselected = try CredentialName(validating: "ENVLATCH_UNSELECTED_TOKEN")
         let values = [
-            selectedA: "selected-a-\(UUID().uuidString)",
-            selectedB: "selected-b-\(UUID().uuidString)",
+            selected: "selected-\(UUID().uuidString)",
             unselected: "unselected-\(UUID().uuidString)",
         ]
         defer {
@@ -132,31 +145,40 @@ struct KeychainSecretStoreTests {
         }
 
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("envlatch-real-profile-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("envlatch-real-direct-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        let launchStore = LaunchProfileStore(fileURL: root.appendingPathComponent("launch-profiles.json"))
-        try launchStore.upsert(
-            LaunchProfile(name: "Integration", credentialNames: [selectedA, selectedB])
+        let endpointStore = EndpointProfileStore(
+            fileURL: root.appendingPathComponent("endpoint-profiles.json")
+        )
+        try endpointStore.upsert(
+            EndpointProfile(
+                providerName: "Direct test",
+                credentialName: selected,
+                contract: .anthropic,
+                baseURL: "https://direct.example.com",
+                credentialEnvironmentName: CredentialName(validating: "ANTHROPIC_AUTH_TOKEN")
+            )
         )
         let application = CLIApplication(
             store: store,
             environment: ["PATH": "/usr/bin:/bin"],
-            endpointProfileStore: EndpointProfileStore(
-                fileURL: root.appendingPathComponent("endpoint-profiles.json")
+            endpointProfileStore: endpointStore,
+            launchProfileStore: LaunchProfileStore(
+                fileURL: root.appendingPathComponent("launch-profiles.json")
             ),
-            launchProfileStore: launchStore,
             stdout: { _ in },
             stderr: { _ in }
         )
 
         let plan = try application.prepareRun(
-            profile: "Integration",
+            profile: selected.rawValue,
             program: "true",
             arguments: []
         )
 
-        #expect(digest(plan.environment[selectedA.rawValue]) == digest(values[selectedA]))
-        #expect(digest(plan.environment[selectedB.rawValue]) == digest(values[selectedB]))
+        #expect(digest(plan.environment[selected.rawValue]) == digest(values[selected]))
+        #expect(digest(plan.environment["ANTHROPIC_AUTH_TOKEN"]) == digest(values[selected]))
+        #expect(plan.environment["ANTHROPIC_BASE_URL"] == "https://direct.example.com")
         #expect(plan.environment[unselected.rawValue] == nil)
     }
 

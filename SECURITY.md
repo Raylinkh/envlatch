@@ -35,9 +35,10 @@ the variables selected for that launch. Debuggers, crash reporters, malicious
 dependencies, and provider-side compromise are outside EnvLatch's protection
 boundary. Use scoped provider credentials and spending limits.
 
-EnvLatch preserves the caller's existing environment. Least-privilege profiles
-limit which EnvLatch-managed Keychain items are read; they do not remove
-credentials or configuration variables already exported by a parent process.
+EnvLatch preserves the caller's existing environment. Selecting a saved key or
+optional key group limits which EnvLatch-managed Keychain items are read; it
+does not remove credentials or configuration variables already exported by a
+parent process.
 
 The public EnvLatch rename intentionally retains the existing internal
 Keychain service `dev.agentkeyring.secrets` and Application Support directory

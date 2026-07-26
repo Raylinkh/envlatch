@@ -8,6 +8,7 @@ struct VaultView: View {
     @State private var pendingDeletion: CredentialName?
     @State private var launchProfileEditor: LaunchProfileEditorState?
     @State private var pendingLaunchProfileDeletion: LaunchProfile?
+    @State private var keyGroupsExpanded = false
     @State private var copiedCommand: String?
     @State private var setupExpanded = true
     @State private var pairedHosts: [PairedHost] = []
@@ -60,7 +61,7 @@ struct VaultView: View {
             Text("This permanently removes the value from your default Keychain.")
         }
         .alert(
-            "Delete launch profile \(pendingLaunchProfileDeletion?.name ?? "profile")?",
+            "Delete key group \(pendingLaunchProfileDeletion?.name ?? "group")?",
             isPresented: Binding(
                 get: { pendingLaunchProfileDeletion != nil },
                 set: { if !$0 { pendingLaunchProfileDeletion = nil } }
@@ -168,31 +169,45 @@ struct VaultView: View {
                     }
                 }
 
-                Section {
-                    if model.launchProfiles.isEmpty {
-                        Text("Create a profile to launch with only the keys a command needs.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(model.launchProfiles) { profile in
-                            LaunchProfileRow(
-                                profile: profile,
-                                onEdit: { launchProfileEditor = LaunchProfileEditorState(profile: profile) },
-                                onDelete: { pendingLaunchProfileDeletion = profile }
-                            )
-                        }
-                    }
-                } header: {
-                    HStack {
-                        Text("Launch profiles")
-                        Spacer()
-                        Button {
-                            launchProfileEditor = LaunchProfileEditorState(profile: nil)
+                if model.showsKeyGroups {
+                    Section {
+                        DisclosureGroup(isExpanded: $keyGroupsExpanded) {
+                            Text("Combine keys only when one command needs more than one.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+
+                            ForEach(model.launchProfiles) { profile in
+                                LaunchProfileRow(
+                                    profile: profile,
+                                    onEdit: {
+                                        launchProfileEditor = LaunchProfileEditorState(profile: profile)
+                                    },
+                                    onDelete: { pendingLaunchProfileDeletion = profile }
+                                )
+                            }
+
+                            Button {
+                                launchProfileEditor = LaunchProfileEditorState(profile: nil)
+                            } label: {
+                                Label("New Key Group", systemImage: "plus")
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityHint("Creates an optional named set of saved keys")
                         } label: {
-                            Label("New Profile", systemImage: "plus")
+                            HStack {
+                                Text("Key groups")
+                                Text("Optional")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                if !model.launchProfiles.isEmpty {
+                                    Text("\(model.launchProfiles.count)")
+                                        .font(.caption.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
-                        .buttonStyle(.borderless)
-                        .accessibilityHint("Creates a named least-privilege set of saved keys")
                     }
                 }
             }
@@ -214,7 +229,7 @@ struct VaultView: View {
             )
 
             Label(
-                "Use a launch profile for least privilege. Broad `run --` exposes every saved key.",
+                "Use any saved key directly with `--using KEY_NAME`. Key groups are only for commands that need several keys.",
                 systemImage: "exclamationmark.shield"
             )
             .font(.caption)
@@ -308,7 +323,7 @@ private struct LaunchProfileRow: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("Delete launch profile \(profile.name)")
+            .accessibilityLabel("Delete key group \(profile.name)")
         }
         .padding(.vertical, 6)
     }
@@ -481,7 +496,7 @@ private struct LaunchProfileEditorSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(existingProfile == nil ? "New launch profile" : "Edit launch profile")
+                Text(existingProfile == nil ? "New key group" : "Edit key group")
                     .font(.title3.weight(.semibold))
                 Text("Select exactly the keys this command or backend needs. Values stay hidden in Keychain.")
                     .font(.callout)
@@ -489,7 +504,7 @@ private struct LaunchProfileEditorSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("Profile name")
+                Text("Group name")
                     .font(.callout.weight(.medium))
                 TextField("Backend", text: $name)
                     .textFieldStyle(.roundedBorder)
@@ -536,7 +551,7 @@ private struct LaunchProfileEditorSheet: View {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("Save Profile") {
+                Button("Save Group") {
                     attemptedSave = true
                     guard let profile = try? makeProfile(), validationError == nil else { return }
                     if onSave(profile) {

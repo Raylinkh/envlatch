@@ -5,6 +5,7 @@ public enum LaunchProfileError: Error, Equatable, LocalizedError, Sendable {
     case emptyCredentials
     case duplicateCredential(String)
     case profileNotFound(String)
+    case ambiguousSelection(String)
     case missingCredential(profile: String, credential: String)
     case conflictingSecretEnvironment(name: String, first: String, second: String)
     case conflictingConfigurationEnvironment(name: String)
@@ -13,21 +14,23 @@ public enum LaunchProfileError: Error, Equatable, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .invalidName:
-            "Use a launch-profile name between 1 and 80 characters with no control characters."
+            "Use a key-group name between 1 and 80 characters with no control characters."
         case .emptyCredentials:
-            "Select at least one saved key for the launch profile."
+            "Select at least one saved key for the key group."
         case .duplicateCredential(let name):
-            "The launch profile contains the key \(name) more than once."
+            "The key group contains \(name) more than once."
         case .profileNotFound(let name):
-            "No launch profile is named \(name). Run `envlatch profiles` to list available profiles."
+            "No saved key or key group is named \(name). Run `envlatch list` or `envlatch groups` to see available names."
+        case .ambiguousSelection(let name):
+            "A saved key and key group are both named \(name). Rename or delete the key group before launching."
         case .missingCredential(let profile, let credential):
-            "Launch profile \(profile) references missing key \(credential). Edit the profile before launching."
+            "Key group \(profile) references missing key \(credential). Edit the group before launching."
         case .conflictingSecretEnvironment(let name, let first, let second):
-            "Launch profile maps both \(first) and \(second) to \(name). Give each selected key a distinct target environment name."
+            "Key group maps both \(first) and \(second) to \(name). Give each selected key a distinct target environment name."
         case .conflictingConfigurationEnvironment(let name):
-            "Launch profile contains conflicting values for \(name). Split those endpoints into separate profiles."
+            "Key group contains conflicting values for \(name). Split those endpoints into separate groups."
         case .credentialInUse(let credential, let profiles):
-            "Remove \(credential) from launch profile(s) \(profiles.joined(separator: ", ")) before deleting it."
+            "Remove \(credential) from key group(s) \(profiles.joined(separator: ", ")) before deleting it."
         }
     }
 }

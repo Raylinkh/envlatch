@@ -25,6 +25,8 @@ struct CLIApplicationTests {
     @Test func helpLabelsBroadRunAsExposingEverySavedKey() {
         #expect(CLIApplication.usage.contains("Broad compatibility"))
         #expect(CLIApplication.usage.contains("exposes every saved key"))
+        #expect(CLIApplication.usage.contains("<saved-key-or-group>"))
+        #expect(CLIApplication.usage.contains("envlatch groups"))
     }
 
     @Test func listAndDoctorNeverReadSecretValues() throws {
@@ -149,6 +151,78 @@ struct CLIApplicationTests {
             try CredentialName(validating: "MINIMAX_API_KEY"),
             try CredentialName(validating: "OPENROUTER_API_KEY"),
         ])
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func savedKeyNameRunsDirectlyWithoutAStoredGroup() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-direct-key-run-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let selected = try CredentialName(validating: "MINIMAX_API_KEY")
+        let unselected = try CredentialName(validating: "UNSELECTED_API_KEY")
+        let endpointStore = EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json"))
+        try endpointStore.upsert(
+            EndpointProfile(
+                providerName: "MiniMax Anthropic",
+                credentialName: selected,
+                contract: .anthropic,
+                baseURL: "https://api.minimaxi.com/anthropic"
+            )
+        )
+        let store = RecordingSecretStore(
+            names: [selected, unselected],
+            values: [
+                selected.rawValue: "minimax-secret",
+                unselected.rawValue: "must-not-be-read",
+            ]
+        )
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: endpointStore
+        )
+
+        let plan = try application.prepareRun(
+            profile: selected.rawValue,
+            program: "true",
+            arguments: []
+        )
+
+        #expect(plan.environment[selected.rawValue] == "minimax-secret")
+        #expect(plan.environment["ANTHROPIC_AUTH_TOKEN"] == "minimax-secret")
+        #expect(plan.environment["ANTHROPIC_BASE_URL"] == "https://api.minimaxi.com/anthropic")
+        #expect(plan.environment[unselected.rawValue] == nil)
+        #expect(store.loadedNames == [selected])
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func matchingSavedKeyAndGroupNameFailsBeforeReadingASecret() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-ambiguous-selection-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let selected = try CredentialName(validating: "MINIMAX_API_KEY")
+        let launchStore = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        try launchStore.upsert(
+            LaunchProfile(name: selected.rawValue, credentialNames: [selected])
+        )
+        let store = RecordingSecretStore(
+            names: [selected],
+            values: [selected.rawValue: "must-not-be-read"]
+        )
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            launchProfileStore: launchStore
+        )
+
+        #expect(throws: LaunchProfileError.ambiguousSelection(selected.rawValue)) {
+            try application.prepareRun(
+                profile: selected.rawValue,
+                program: "true",
+                arguments: []
+            )
+        }
+        #expect(store.loadedNames.isEmpty)
         #expect(store.loadAllCallCount == 0)
     }
 

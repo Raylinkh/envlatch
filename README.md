@@ -6,9 +6,9 @@ or backend with exactly the EnvLatch-managed saved keys it needs.
 ![EnvLatch native macOS app](docs/assets/envlatch-v0.1.0.png)
 
 ```sh
+envlatch run --using MINIMAX_API_KEY -- claude
+envlatch run --using GITHUB_TOKEN -- gh auth status
 envlatch run --using "Backend" -- npm test
-envlatch run --using "AI tools" -- claude
-envlatch run --using "Release" -- ./scripts/deploy.sh
 ```
 
 The launched process receives ordinary environment variables, so existing code
@@ -17,15 +17,15 @@ provider-specific command, proxy, or code change is required.
 
 ## Why EnvLatch
 
-- **One command for every provider and tool.** Profiles select environment
-  variables; they do not select a hard-coded provider integration.
-- **Multiple keys without broad exposure.** A launch profile can contain one or
-  many saved keys, while unselected EnvLatch keys are not read from Keychain.
+- **One command for every provider and tool.** Use a saved key by name or an
+  optional key group; neither selects a hard-coded provider integration.
+- **Multiple keys without broad exposure.** A key group contains the exact keys
+  one command needs, while unselected EnvLatch keys are not read from Keychain.
 - **Endpoint-compatible.** Per-key metadata can map a saved credential to the
   variable and base URL expected by Anthropic-, OpenAI-, or generic clients.
 - **Agent-friendly without revealing values.** The bundled portable skill
-  teaches any agent or host to inspect non-secret profile names and wrap its
-  normal command.
+  teaches any agent or host to inspect non-secret key and group names and wrap
+  its normal command.
 - **Native and local.** Values stay in the non-synchronizing macOS default
   Keychain. There is no server, account, sync layer, or custom cryptography.
 
@@ -62,16 +62,22 @@ boundary.
    `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, or `AWS_SECRET_ACCESS_KEY`.
 3. If a client uses a compatible API at a custom endpoint, enable **Endpoint
    profile** and set its contract, base URL, and target credential variable.
-4. Choose **New Profile** and select the exact saved keys a command needs.
-5. Launch the normal command through that profile:
+4. Launch the normal command using the saved key name:
+
+```sh
+envlatch run --using OPENAI_API_KEY -- python3 server.py
+```
+
+5. Only when one command needs several keys, expand **Key groups**, choose
+   **New Key Group**, and select the exact keys it needs:
 
 ```sh
 envlatch run --using "Backend" -- python3 server.py
 ```
 
-For example, a profile can select both `OPENAI_API_KEY` and `GITHUB_TOKEN`.
-Python, Node, Swift, shell commands, and their SDKs read those variables
-normally:
+For example, the optional `Backend` group can select both `OPENAI_API_KEY` and
+`GITHUB_TOKEN`. Python, Node, Swift, shell commands, and their SDKs read those
+variables normally:
 
 ```python
 import os
@@ -97,10 +103,10 @@ record:
 
 A saved key can therefore remain `MINIMAX_API_KEY` while an Anthropic-compatible
 client receives the same value as `ANTHROPIC_AUTH_TOKEN` plus the configured
-`ANTHROPIC_BASE_URL`. A launch profile independently decides whether that key
-is available to a command.
+`ANTHROPIC_BASE_URL`. Selecting that saved key directly—or including it in an
+optional key group—makes those bindings available to the command.
 
-EnvLatch validates the entire profile before reading any selected value. It
+EnvLatch validates the entire selection before reading any value. It
 rejects missing keys, two sources targeting the same credential variable, and
 conflicting contract configuration rather than choosing a last writer.
 
@@ -113,18 +119,19 @@ can provide its own display name:
 envlatch pair "My build agent"
 envlatch doctor
 envlatch help
-envlatch profiles
+envlatch groups
 ```
 
 The GUI includes a copyable setup prompt with those commands and the
-least-privilege launch rule. The installed skill instructs agents to ask for a
-profile when none matches; it must not silently fall back to broad access.
+least-privilege launch rule. The installed skill uses a saved key name directly
+and asks for an optional key group only when a command needs several keys; it
+must not silently fall back to broad access.
 
 Safe inspection commands never read secret values:
 
 ```sh
 envlatch list
-envlatch profiles
+envlatch groups
 envlatch doctor
 envlatch version
 envlatch help

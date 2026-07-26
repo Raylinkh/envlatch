@@ -22,6 +22,48 @@ struct VaultViewModelTests {
         #expect(model.errorMessage == DeniedSecretStore.message)
         #expect(!(model.errorMessage ?? "").contains(DeniedSecretStore.canary))
     }
+
+    @Test func keyGroupsStayHiddenUntilTheyAreUseful() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-key-group-visibility-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = try CredentialName(validating: "FIRST_API_KEY")
+        let second = try CredentialName(validating: "SECOND_API_KEY")
+        let endpoints = EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json"))
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+
+        let oneKeyModel = VaultViewModel(
+            store: StaticSecretStore(names: [first]),
+            profileStore: endpoints,
+            launchProfileStore: groups
+        )
+        #expect(oneKeyModel.showsKeyGroups == false)
+
+        let twoKeyModel = VaultViewModel(
+            store: StaticSecretStore(names: [first, second]),
+            profileStore: endpoints,
+            launchProfileStore: groups
+        )
+        #expect(twoKeyModel.showsKeyGroups)
+
+        try groups.upsert(LaunchProfile(name: "Existing", credentialNames: [first]))
+        let existingGroupModel = VaultViewModel(
+            store: StaticSecretStore(names: [first]),
+            profileStore: endpoints,
+            launchProfileStore: groups
+        )
+        #expect(existingGroupModel.showsKeyGroups)
+    }
+}
+
+private struct StaticSecretStore: SecretStore {
+    let names: [CredentialName]
+
+    func listNames() throws -> [CredentialName] { names }
+    func save(name: CredentialName, value: String) throws {}
+    func delete(name: CredentialName) throws {}
+    func load(name: CredentialName) throws -> String { "" }
+    func loadAll() throws -> [String: String] { [:] }
 }
 
 private struct DeniedSecretStore: SecretStore {

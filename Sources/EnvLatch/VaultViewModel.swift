@@ -15,6 +15,10 @@ final class VaultViewModel: ObservableObject {
     private let launchProfileStore: LaunchProfileStore
     private let mutationCoordinator: CredentialMutationCoordinator
 
+    var showsKeyGroups: Bool {
+        names.count > 1 || !launchProfiles.isEmpty
+    }
+
     init(
         store: any SecretStore = KeychainSecretStore(),
         profileStore: EndpointProfileStore = .current(),
@@ -49,6 +53,11 @@ final class VaultViewModel: ObservableObject {
         do {
             let name = try CredentialName(validating: rawName)
             let replacing = names.contains(name)
+            if !replacing, launchProfiles.contains(where: {
+                $0.name.caseInsensitiveCompare(name.rawValue) == .orderedSame
+            }) {
+                throw LaunchProfileError.ambiguousSelection(name.rawValue)
+            }
             try mutationCoordinator.save(
                 name: name,
                 value: value.isEmpty ? nil : value,
@@ -89,10 +98,15 @@ final class VaultViewModel: ObservableObject {
     @discardableResult
     func saveLaunchProfile(_ profile: LaunchProfile) -> Bool {
         do {
+            if names.contains(where: {
+                $0.rawValue.caseInsensitiveCompare(profile.name) == .orderedSame
+            }) {
+                throw LaunchProfileError.ambiguousSelection(profile.name)
+            }
             try launchProfileStore.upsert(profile)
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
-            statusMessage = "Saved launch profile \(profile.name)."
+            statusMessage = "Saved key group \(profile.name)."
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -105,7 +119,7 @@ final class VaultViewModel: ObservableObject {
             try launchProfileStore.delete(named: profile.name)
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
-            statusMessage = "Deleted launch profile \(profile.name)."
+            statusMessage = "Deleted key group \(profile.name)."
         } catch {
             errorMessage = error.localizedDescription
         }

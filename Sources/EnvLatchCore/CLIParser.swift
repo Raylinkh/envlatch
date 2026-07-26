@@ -22,7 +22,7 @@ public enum CLIParseError: Error, Equatable, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .missingCommand:
-            "Choose pair, list, doctor, run, or help."
+            "Choose pair, list, groups, doctor, run, or help."
         case .unknownCommand(let command):
             "Unknown command: \(command)"
         case .unexpectedArguments(let command):
@@ -30,7 +30,7 @@ public enum CLIParseError: Error, Equatable, LocalizedError, Sendable {
         case .missingPairName:
             "Use `envlatch pair <agent-or-host-name>`."
         case .missingProfile:
-            "Use `envlatch run --using <profile-name> -- <program> [args...]`."
+            "Use `envlatch run --using <key-or-group> -- <program> [args...]`."
         case .missingRunSeparator:
             "Use `envlatch run -- <program> [args...]`."
         case .missingProgram:
@@ -51,7 +51,7 @@ public enum CLIParser {
                 throw CLIParseError.unexpectedArguments(command)
             }
             return .list
-        case "profiles":
+        case "groups", "profiles":
             guard arguments.count == 1 else {
                 throw CLIParseError.unexpectedArguments(command)
             }

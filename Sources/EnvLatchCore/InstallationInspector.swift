@@ -120,10 +120,11 @@ public struct InstallationInspector: Sendable {
            \(pairCommand)
         2. Run `envlatch doctor` and confirm `agent_pairing=paired`.
         3. Run `envlatch help` and follow its usage.
-        4. Run `envlatch profiles` to find named least-privilege launch profiles and their non-secret endpoint bindings.
-        5. Run the command exactly as:
-           envlatch run --using <profile-name> -- <program> [args...]
-           If no matching profile exists, ask the user to create one in the GUI. Never silently use broad `envlatch run --`, which exposes every saved key.
+        4. Run `envlatch list` to see saved key names. Any saved key works directly with `--using`.
+        5. If a command needs multiple keys, run `envlatch groups` to find an optional named key group and its non-secret endpoint bindings.
+        6. Run the command exactly as:
+           envlatch run --using <saved-key-or-group> -- <program> [args...]
+           If no matching key or group exists, ask the user to configure it in the GUI. Never silently use broad `envlatch run --`, which exposes every saved key.
 
         Use `envlatch list` only to check saved environment-variable names. Never print, reveal, export, or write secret values to files or shell profiles.
         """
