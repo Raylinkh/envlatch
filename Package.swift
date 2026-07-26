@@ -2,28 +2,28 @@
 import PackageDescription
 
 let package = Package(
-    name: "AgentKeyring",
+    name: "EnvLatch",
     platforms: [.macOS(.v13)],
     products: [
-        .library(name: "AgentKeyringCore", targets: ["AgentKeyringCore"]),
-        .executable(name: "AgentKeyring", targets: ["AgentKeyring"]),
+        .library(name: "EnvLatchCore", targets: ["EnvLatchCore"]),
+        .executable(name: "EnvLatch", targets: ["EnvLatch"]),
     ],
     targets: [
         .target(
-            name: "AgentKeyringCore",
+            name: "EnvLatchCore",
             linkerSettings: [.linkedFramework("Security")]
         ),
         .executableTarget(
-            name: "AgentKeyring",
-            dependencies: ["AgentKeyringCore"],
+            name: "EnvLatch",
+            dependencies: ["EnvLatchCore"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("Security"),
             ]
         ),
         .testTarget(
-            name: "AgentKeyringCoreTests",
-            dependencies: ["AgentKeyringCore"]
+            name: "EnvLatchCoreTests",
+            dependencies: ["EnvLatchCore"]
         ),
     ]
 )

@@ -1,0 +1,4 @@
+interface:
+  display_name: "EnvLatch"
+  short_description: "Run commands with Keychain-backed API keys"
+  default_prompt: "Use $envlatch to pair this named agent or host, inspect non-secret endpoint profiles, then run the exact command with its Keychain-backed credential without revealing or exporting secret values."
