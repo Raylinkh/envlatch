@@ -1,78 +1,189 @@
-# AgentKeyring
+# EnvLatch
 
-AgentKeyring is a small native macOS utility for storing local AI-provider API keys once and releasing them only to a command you explicitly launch. Values live in macOS Keychain, not project `.env` files, shell startup files, command arguments, or AgentKeyring logs.
+Store API keys once in macOS Keychain. Launch any local agent, SDK, script, test,
+or backend with exactly the saved keys it needs.
 
-The GUI adds, replaces, lists, and deletes keys. An optional endpoint profile stores the provider label, API contract, base URL, and target credential environment name beside the Keychain reference—never the secret value. Every provider and tool still uses the same CLI:
+![EnvLatch native macOS app](docs/assets/envlatch-v0.1.0.png)
 
 ```sh
-agent-keyring run -- <command> [args...]
-agent-keyring run --using <profile-name> -- <command> [args...]
+envlatch run --using "Backend" -- npm test
+envlatch run --using "AI tools" -- claude
+envlatch run --using "Release" -- ./scripts/deploy.sh
 ```
 
-## Install
+The launched process receives ordinary environment variables, so existing code
+keeps working as if the values came from a `.env` file. No EnvLatch SDK,
+provider-specific command, proxy, or code change is required.
+
+## Why EnvLatch
+
+- **One command for every provider and tool.** Profiles select environment
+  variables; they do not select a hard-coded provider integration.
+- **Multiple keys without broad exposure.** A launch profile can contain one or
+  many saved keys, while unselected keys are not read from Keychain.
+- **Endpoint-compatible.** Per-key metadata can map a saved credential to the
+  variable and base URL expected by Anthropic-, OpenAI-, or generic clients.
+- **Agent-friendly without revealing values.** The bundled portable skill
+  teaches any agent or host to inspect non-secret profile names and wrap its
+  normal command.
+- **Native and local.** Values stay in the non-synchronizing macOS login
+  Keychain. There is no server, account, sync layer, or custom cryptography.
+
+## Install from source
+
+Requirements: macOS 13 or newer and Xcode 16 or a Swift 6 toolchain.
 
 ```sh
+git clone https://github.com/Raylinkh/envlatch.git
+cd envlatch
 ./scripts/install.sh
-open "$HOME/Applications/AgentKeyring.app"
+open "$HOME/Applications/EnvLatch.app"
 ```
 
-The installer builds a release app in `dist/`, copies it to `~/Applications`, creates `~/.local/bin/agent-keyring`, installs one canonical Agent Skills artifact at `~/.agents/skills/agent-keyring`, and adds discovery links for Codex, Claude Code, and Gemini CLI. Those links are conveniences, not an allowlist. Any agent or host can register its own display name with `agent-keyring pair <name>`. Existing paths are moved to timestamped backups rather than deleted.
+The installer:
 
-For a stable Keychain identity across rebuilds, provide a signing identity:
+- builds `EnvLatch.app` and installs it in `~/Applications`;
+- creates `~/.local/bin/envlatch` as a symlink to the executable inside the app;
+- installs one canonical skill at `~/.agents/skills/envlatch`;
+- adds discovery links for Codex, Claude Code, and Gemini CLI.
+
+Those agent links are conveniences, not an allowlist. Existing EnvLatch or
+legacy AgentKeyring install paths are moved to timestamped backups.
+
+Source builds are ad-hoc signed by default. That is suitable for local source
+installation, but a rebuild may cause macOS to request Keychain authorization
+again. See [Binary releases](#binary-releases) for the trusted distribution
+boundary.
+
+## Quick start
+
+1. Open EnvLatch and choose **Add Key**.
+2. Save a credential-shaped environment name such as `OPENAI_API_KEY`,
+   `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, or `AWS_SECRET_ACCESS_KEY`.
+3. If a client uses a compatible API at a custom endpoint, enable **Endpoint
+   profile** and set its contract, base URL, and target credential variable.
+4. Choose **New Profile** and select the exact saved keys a command needs.
+5. Launch the normal command through that profile:
 
 ```sh
-AGENT_KEYRING_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" ./scripts/install.sh
+envlatch run --using "Backend" -- python3 server.py
 ```
 
-Without one, the app is ad-hoc signed. It works locally, but macOS may ask you to reauthorize Keychain access after an upgrade changes the binary signature.
+For example, a profile can select both `OPENAI_API_KEY` and `GITHUB_TOKEN`.
+Python, Node, Swift, shell commands, and their SDKs read those variables
+normally:
 
-## Use
+```python
+import os
 
-1. Open AgentKeyring and choose **Add Key**.
-2. Enter a credential-shaped environment name such as `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, or `AWS_SECRET_ACCESS_KEY`.
-3. Paste the value. Optionally enable **Endpoint profile** and enter a provider/profile name, API contract, base URL, and the credential environment name expected by the target client.
-4. Save, then use the same wrapper for every provider. A profiled launch is `agent-keyring run --using "MiniMax China" -- claude`; an unprofiled launch is `agent-keyring run -- make test`.
-
-For the saved MiniMax key used in this project, the Claude Code profile is:
-
-```text
-Provider / profile: MiniMax China
-API contract: Anthropic
-API base URL: https://api.minimaxi.com/anthropic
-Expose this key as: ANTHROPIC_AUTH_TOKEN
+openai_key = os.environ["OPENAI_API_KEY"]
+github_token = os.environ["GITHUB_TOKEN"]
 ```
 
-The contract derives `ANTHROPIC_BASE_URL`; the editable credential binding handles the fact that clients may expect different auth variable names. The same source Keychain item is not duplicated.
+EnvLatch replaces itself with the target executable using `execve`; it does not
+invoke a shell or interpolate the arguments.
 
-The paired `agent-keyring` skill teaches future agents to use this wrapper automatically when a command needs a saved credential. It never reveals a value to agent context.
+## Endpoint metadata
 
-Safe inspection never reads values:
+Endpoint metadata belongs to one saved key and never contains its value. It can
+record:
+
+- a display label;
+- API contract (`Anthropic`, `OpenAI Responses`, `OpenAI-compatible`, or
+  generic);
+- HTTPS base URL, with plain HTTP allowed only for loopback development;
+- the credential variable expected by the target client.
+
+A saved key can therefore remain `MINIMAX_API_KEY` while an Anthropic-compatible
+client receives the same value as `ANTHROPIC_AUTH_TOKEN` plus the configured
+`ANTHROPIC_BASE_URL`. A launch profile independently decides whether that key
+is available to a command.
+
+EnvLatch validates the entire profile before reading any selected value. It
+rejects missing keys, two sources targeting the same credential variable, and
+conflicting contract configuration rather than choosing a last writer.
+
+## Agent and host setup
+
+Pairing is optional, one-time setup status—not authorization. Any agent or host
+can provide its own display name:
 
 ```sh
-agent-keyring list
-agent-keyring profiles
-agent-keyring doctor
-agent-keyring help
-agent-keyring pair "My agent or host"
+envlatch pair "My build agent"
+envlatch doctor
+envlatch help
+envlatch profiles
 ```
 
-Supported names are uppercase POSIX variables ending in `_API_KEY`, `_TOKEN`, `_SECRET`, `_PASSWORD`, `_ACCESS_KEY`, `_PRIVATE_KEY`, or `_CREDENTIAL`. Loader-control names beginning with `DYLD_` or `LD_` are rejected. This prevents a saved credential from changing command lookup or dynamic loading.
+The GUI includes a copyable setup prompt with those commands and the
+least-privilege launch rule. The installed skill instructs agents to ask for a
+profile when none matches; it must not silently fall back to broad access.
+
+Safe inspection commands never read secret values:
+
+```sh
+envlatch list
+envlatch profiles
+envlatch doctor
+envlatch version
+envlatch help
+```
+
+`envlatch run -- <command>` remains an explicit compatibility mode that exposes
+every saved key to the launched process. Prefer `run --using`.
 
 ## Security boundary
 
-AgentKeyring protects keys at rest and reduces accidental leakage into repositories, shell history, and logs. It deliberately has no value-reveal command, `.env` export, `eval` output, sync service, or shell interpolation.
+EnvLatch reduces accidental credential leakage into repositories, `.env`
+files, shell profiles, terminal history, command arguments, and its own logs.
+It deliberately has no reveal, clipboard, export, `eval`, or `.env` command.
 
-Environment injection is not secret isolation. A profiled launch exposes its one referenced Keychain value under the saved name and configured client binding; an unprofiled launch exposes every saved key. The launched process and its descendants can read what was injected, and crash/debug tooling may expose process memory. Use provider-side spending limits and scoped keys. AgentKeyring does not sandbox a malicious agent or dependency.
+Environment injection is not secret isolation. A launched process and its
+descendants can read every variable selected for that launch, and crash or
+debug tooling may expose process memory. EnvLatch does not sandbox a malicious
+agent or dependency. Use scoped keys and provider-side spending limits.
 
-Endpoint profiles and named-host registrations are non-secret JSON metadata under `~/Library/Application Support/AgentKeyring/` with user-only file permissions. They may contain provider labels and URLs, but never credential values.
+Credential names must be uppercase POSIX variable names with a recognized
+credential suffix. Loader-control names beginning with `DYLD_` or `LD_` are
+rejected. Executables and symlinks are fully resolved and validated before
+Keychain values are read.
 
-V1 uses the normal non-synchronizing login Keychain with an explicit application-only ACL and is not App-Sandboxed because its job is to replace itself with arbitrary local tools. The CLI resolves a program against the caller's inherited `PATH` before reading credentials, then uses `execve` directly with the original arguments; it never invokes `/bin/sh`.
+The rename to EnvLatch intentionally retains the internal Keychain service
+`dev.agentkeyring.secrets` and Application Support directory `AgentKeyring`.
+This is a compatibility decision: existing values remain in one store and are
+not copied during migration. See [SECURITY.md](SECURITY.md) for the full
+boundary and reporting process.
 
 ## Development
 
 ```sh
 swift test
 ./scripts/build-app.sh
+dist/EnvLatch.app/Contents/MacOS/EnvLatch --version
 ```
 
-The accepted behavior and proof contract is in [SPEC.md](SPEC.md).
+The accepted behavior and release proof contract is in [SPEC.md](SPEC.md).
+Current evidence and its limits are recorded in
+[VERIFICATION.md](VERIFICATION.md).
+
+GitHub Actions runs the test suite, validates scripts and bundle metadata,
+builds the app, and verifies its structural code signature.
+
+## Binary releases
+
+No downloadable binary is claimed until it has been Developer ID signed,
+notarized by Apple, stapled, and assessed by Gatekeeper. A maintainer with those
+credentials can prepare one with:
+
+```sh
+ENVLATCH_CODESIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
+ENVLATCH_NOTARY_PROFILE="envlatch-notary" \
+./scripts/package-release.sh
+```
+
+The script emits a notarized zip and SHA-256 checksum under `dist/`. Source
+installation remains the v0.1 distribution path until that receipt exists.
+
+## License
+
+[MIT](LICENSE)

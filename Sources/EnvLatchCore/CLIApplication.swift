@@ -70,6 +70,9 @@ public struct CLIApplication {
                 stdout("launch_profile_count=\(launchProfiles.count)")
                 stdout("pair_command=\(inspector.pairCommand)")
                 return 0
+            case .version:
+                stdout("EnvLatch \(ProductInfo.version)")
+                return 0
             case .pair(let name):
                 try pairInstaller.install(scriptURL: inspector.pairScriptURL, environment: environment)
                 let host = try pairedHostStore.register(name: name)
@@ -188,6 +191,7 @@ public struct CLIApplication {
       envlatch list
       envlatch profiles
       envlatch doctor
+      envlatch version
       envlatch pair <agent-or-host-name>
       envlatch run -- <program> [args...]
       envlatch run --using <profile-name> -- <program> [args...]

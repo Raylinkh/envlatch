@@ -7,6 +7,8 @@ struct CLIParserTests {
         #expect(try CLIParser.parse(["list"]) == .list)
         #expect(try CLIParser.parse(["profiles"]) == .profiles)
         #expect(try CLIParser.parse(["doctor"]) == .doctor)
+        #expect(try CLIParser.parse(["version"]) == .version)
+        #expect(try CLIParser.parse(["--version"]) == .version)
         #expect(try CLIParser.parse(["pair", "Codex"]) == .pair(name: "Codex"))
         #expect(
             try CLIParser.parse(["pair", "Build", "Mac"])
@@ -34,6 +36,8 @@ struct CLIParserTests {
         ["pair"],
         ["list", "extra"],
         ["profiles", "extra"],
+        ["version", "extra"],
+        ["--version", "extra"],
     ])
     func rejectsAmbiguousInput(_ arguments: [String]) {
         #expect(throws: CLIParseError.self) {

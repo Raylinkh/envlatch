@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Validate scripts and metadata
+        run: |
+          zsh -n scripts/build-app.sh scripts/install.sh scripts/pair-agents.sh scripts/package-release.sh
+          plutil -lint Resources/Info.plist
+          git diff --check
+
+      - name: Test
+        run: swift test
+
+      - name: Build and verify app bundle
+        run: |
+          ./scripts/build-app.sh
+          codesign --verify --deep --strict dist/EnvLatch.app
+          test -f dist/EnvLatch.app/Contents/Resources/AppIcon.icns
+          test "$(dist/EnvLatch.app/Contents/MacOS/EnvLatch --version)" = "EnvLatch 0.1.0"

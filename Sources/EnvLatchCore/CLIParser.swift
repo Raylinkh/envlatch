@@ -4,6 +4,7 @@ public enum CLICommand: Equatable, Sendable {
     case list
     case profiles
     case doctor
+    case version
     case pair(name: String)
     case run(profile: String?, program: String, arguments: [String])
     case help
@@ -60,6 +61,11 @@ public enum CLIParser {
                 throw CLIParseError.unexpectedArguments(command)
             }
             return .doctor
+        case "version", "--version":
+            guard arguments.count == 1 else {
+                throw CLIParseError.unexpectedArguments(command)
+            }
+            return .version
         case "pair":
             guard arguments.count >= 2 else {
                 throw CLIParseError.missingPairName

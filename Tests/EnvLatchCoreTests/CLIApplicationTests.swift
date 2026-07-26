@@ -4,6 +4,24 @@ import Testing
 
 @Suite("AK-3 and AK-6 CLI behavior", .serialized)
 struct CLIApplicationTests {
+    @Test func reportsProductVersionWithoutReadingSecretValues() throws {
+        let store = RecordingSecretStore(
+            names: [try CredentialName(validating: "OPENAI_API_KEY")],
+            values: ["OPENAI_API_KEY": "must-not-be-read"]
+        )
+        var output: [String] = []
+        let application = CLIApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            stdout: { output.append($0) },
+            stderr: { _ in }
+        )
+
+        #expect(application.run(arguments: ["--version"]) == 0)
+        #expect(output == ["EnvLatch 0.1.0"])
+        #expect(store.loadAllCallCount == 0)
+    }
+
     @Test func listAndDoctorNeverReadSecretValues() throws {
         let store = RecordingSecretStore(
             names: [try CredentialName(validating: "OPENAI_API_KEY")],

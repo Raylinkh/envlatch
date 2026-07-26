@@ -17,6 +17,7 @@ stage_app="$stage_root/$app_name"
 mkdir -p "$stage_app/Contents/MacOS" "$stage_app/Contents/Resources"
 install -m 755 "$binary_dir/EnvLatch" "$stage_app/Contents/MacOS/EnvLatch"
 install -m 644 "$project_root/Resources/Info.plist" "$stage_app/Contents/Info.plist"
+install -m 644 "$project_root/Resources/AppIcon.icns" "$stage_app/Contents/Resources/AppIcon.icns"
 install -m 755 "$project_root/scripts/pair-agents.sh" "$stage_app/Contents/Resources/pair-agents.sh"
 ditto "$project_root/AgentSkill/envlatch" "$stage_app/Contents/Resources/envlatch-skill"
 
