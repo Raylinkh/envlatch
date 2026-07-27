@@ -238,16 +238,20 @@ documented in `SPEC.md` and `SECURITY.md`.
 
 ## Publication status
 
-At this receipt revision:
-
 - repository: https://github.com/Raylinkh/envlatch
 - v0.1.0 historical unsigned prerelease: published
-- v0.2.0 source commit and unsigned preview: verified locally, not yet pushed
-  or published
+- v0.2.0 tag source: `819140f5d4ecdab42de1c0ceae30cc4cc57e63f2`
+- code candidate within that source: `9204fda08b011582dd94dbfa041e3167a35d0fd3`
+- CI: https://github.com/Raylinkh/envlatch/actions/runs/30238334541
+  (`success`)
+- tag and prerelease: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
+- release assets: unsigned arm64 DMG and adjacent SHA-256 checksum
 - private vulnerability reporting: enabled
 
-This section must be updated with the remote commit, CI run, release URL, and
-downloaded-back checksum before v0.2.0 publication is called complete.
+Both assets were downloaded back from GitHub into a new temporary directory.
+`shasum -a 256 -c` returned `OK`; the remote DMG was `1,914,224` bytes and its
+digest matched
+`65e864d68afbb5e716d40772b027d0e480778cfd40cebf8f857054a8ddd8874b`.
 
 ## Known boundaries
 
