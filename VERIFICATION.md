@@ -294,14 +294,27 @@ documented in `SPEC.md` and `SECURITY.md`.
 - code candidate within that source: `9204fda08b011582dd94dbfa041e3167a35d0fd3`
 - CI: https://github.com/Raylinkh/envlatch/actions/runs/30238334541
   (`success`)
-- tag and prerelease: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
-- release assets: unsigned arm64 DMG and adjacent SHA-256 checksum
+- stable latest release: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
+- recommended release assets: signed/notarized arm64 DMG and ZIP with adjacent
+  SHA-256 checksums
+- legacy release assets: explicitly named unsigned arm64 DMG and checksum
 - private vulnerability reporting: enabled
 
-Both assets were downloaded back from GitHub into a new temporary directory.
-`shasum -a 256 -c` returned `OK`; the remote DMG was `1,914,224` bytes and its
-digest matched
-`65e864d68afbb5e716d40772b027d0e480778cfd40cebf8f857054a8ddd8874b`.
+All four signed assets were downloaded back from GitHub into a new temporary
+directory. `scripts/verify-release.sh` passed against those remote bytes,
+including checksums, signatures, stapled tickets, Gatekeeper assessment,
+mounted payload comparison, isolated installation, and rollback. The remote
+artifacts were:
+
+```text
+EnvLatch-0.2.0-macos-arm64.zip
+bytes=1587787
+sha256=d2c19d3d06021a0051ae27fd624f77f4209760bd3925a2d912634a86aad7c3ba
+
+EnvLatch-0.2.0-macos-arm64.dmg
+bytes=1924400
+sha256=85689589b01521af10f784e459a3241528d29c2057bbff156497113df08d6ccf
+```
 
 ## Known boundaries
 

@@ -14,5 +14,7 @@ Shipped: yes — 2026-07-27
 - Signed and notarized arm64 release: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
 - Local ZIP/DMG checksums, Apple notarization, stapling, Gatekeeper assessment,
   isolated installation, and rollback behavior verified.
+- All four signed assets were downloaded back from GitHub and passed the same
+  release verifier; v0.2.0 is the stable latest release.
 - GitHub private vulnerability reporting enabled.
 - The explicitly named unsigned DMG remains a legacy preview.

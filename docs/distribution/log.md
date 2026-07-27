@@ -25,3 +25,9 @@
   - both notary logs report `Accepted`, status code `0`, and no issues
   - stapler, Gatekeeper, mounted payload, isolated install, and rollback checks
     passed locally
+- Uploaded the signed ZIP, DMG, and adjacent checksums to v0.2.0; retained the
+  explicitly named unsigned DMG as a legacy preview.
+- Downloaded all four signed assets into a fresh directory and reran the full
+  release verifier successfully.
+- Promoted v0.2.0 from prerelease to the stable latest GitHub release:
+  https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0

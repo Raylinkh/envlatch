@@ -1,6 +1,6 @@
 # EnvLatch v0.2.0 distribution copy
 
-Status: GitHub v0.2.0 signed release prepared; outbound community posting
+Status: GitHub v0.2.0 signed release published; outbound community posting
 remains unpublished.
 
 ## Short announcement
