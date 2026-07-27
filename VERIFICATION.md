@@ -1,18 +1,19 @@
-# EnvLatch v0.2.0 verification
+# EnvLatch v0.2.1 verification
 
-Date: 2026-07-27
+Date: 2026-07-28
 Platform: macOS arm64
-Code candidate: `9204fda08b011582dd94dbfa041e3167a35d0fd3`
+Code candidate: `c24eccd5ef3cb913cf3423c2765c51d57f61a6e1`
 
 ## Release verdict
 
-**READY FOR A SIGNED AND NOTARIZED PUBLIC BINARY**
+**SHIPPED AS A SIGNED AND NOTARIZED PUBLIC BINARY**
 
-The committed source, release build, repeated saved-key launch, create-only
-CLI key groups, installed canonical skill, Keychain behavior, signed arm64 ZIP
-and DMG, and legacy unsigned preview have candidate-specific behavioral
-receipts. Apple accepted both signed submissions, the tickets are stapled, and
-Gatekeeper accepts the app and DMG as Notarized Developer ID.
+The provider-aware dashboard, provider-agnostic launch behavior, repeated
+saved-key selection, create-only key groups, installed canonical skill,
+Keychain behavior, signed arm64 ZIP, and signed arm64 DMG have
+candidate-specific receipts. Apple accepted both v0.2.1 submissions, the
+tickets are stapled, Gatekeeper accepts both artifacts as Notarized Developer
+ID, and the public GitHub bytes passed the full release verifier.
 
 ## RED to GREEN
 
@@ -37,9 +38,9 @@ store suite passed:
 exit=0
 ```
 
-## Exact-candidate tests
+## v0.2.0 behavior baseline
 
-`swift test --no-parallel` passed from the committed source:
+The v0.2.0 committed-source suite passed:
 
 ```text
 55 tests
@@ -196,7 +197,7 @@ receipt.
 Source candidate:
 `514e5c12c055678ae55b8c2418c47aad0d2f907e`
 
-The post-v0.2.0 source UI refresh passed:
+The v0.2.1 exact-candidate suite passed:
 
 ```text
 swift test --no-parallel
@@ -232,9 +233,61 @@ height=700
 sha256=19696e6da131919a1c4291918bb1fb409c09d8c6c7c84390a369a6e48c411a92
 ```
 
-The image is embedded in both public READMEs. This source refresh does not
-replace the already notarized v0.2.0 release artifacts; distributing this UI as
-a notarized binary requires a new versioned release.
+The image is embedded in both public READMEs. v0.2.1 packages this exact
+provider-aware UI as a signed and notarized binary.
+
+## v0.2.1 signed release receipt
+
+The annotated `v0.2.1` tag resolves to:
+
+```text
+c24eccd5ef3cb913cf3423c2765c51d57f61a6e1
+```
+
+GitHub Actions run
+[`30300332620`](https://github.com/Raylinkh/envlatch/actions/runs/30300332620)
+completed successfully against that commit. The local release build reported
+`EnvLatch 0.2.1`, and `swift test --no-parallel` passed 60 tests in 15 suites.
+
+Apple accepted both submitted artifacts with no reported issues:
+
+```text
+zip_submission=0cb62703-9892-4edc-85f3-ff1f285e8761
+dmg_submission=0cad7f06-a991-4f15-9138-7f853c084866
+zip_status=Accepted
+dmg_status=Accepted
+```
+
+The stapled release artifacts are:
+
+```text
+EnvLatch-0.2.1-macos-arm64.zip
+bytes=1683112
+sha256=da861c794ef56af0fe73b695fe8fbdb16ce52ac6809cc724edbbe9525016d08e
+
+EnvLatch-0.2.1-macos-arm64.dmg
+bytes=2050855
+sha256=83eacdecaadf488c973ee786ed6ccfb9db2e1c69884e43f4f023eb223945c6f7
+```
+
+`scripts/verify-release.sh` passed locally and again after downloading all four
+public assets into a fresh temporary directory:
+
+```text
+archive_checksum=passed
+dmg_checksum=passed
+dmg_payloads=4
+architecture=arm64
+signature=Developer ID Application
+notarization=stapled
+gatekeeper=accepted
+isolated_install=passed
+induced_failure_rollback=passed
+exit=0
+```
+
+Public release:
+https://github.com/Raylinkh/envlatch/releases/tag/v0.2.1
 
 ## Unsigned preview artifact
 
@@ -335,14 +388,13 @@ documented in `SPEC.md` and `SECURITY.md`.
 
 - repository: https://github.com/Raylinkh/envlatch
 - v0.1.0 historical unsigned prerelease: published
-- v0.2.0 tag source: `819140f5d4ecdab42de1c0ceae30cc4cc57e63f2`
-- code candidate within that source: `9204fda08b011582dd94dbfa041e3167a35d0fd3`
-- CI: https://github.com/Raylinkh/envlatch/actions/runs/30238334541
+- v0.2.1 tag source: `c24eccd5ef3cb913cf3423c2765c51d57f61a6e1`
+- CI: https://github.com/Raylinkh/envlatch/actions/runs/30300332620
   (`success`)
-- stable latest release: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
+- stable latest release: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.1
 - recommended release assets: signed/notarized arm64 DMG and ZIP with adjacent
   SHA-256 checksums
-- legacy release assets: explicitly named unsigned arm64 DMG and checksum
+- legacy v0.2.0 release assets: explicitly named unsigned arm64 DMG and checksum
 - private vulnerability reporting: enabled
 
 All four signed assets were downloaded back from GitHub into a new temporary
@@ -352,13 +404,13 @@ mounted payload comparison, isolated installation, and rollback. The remote
 artifacts were:
 
 ```text
-EnvLatch-0.2.0-macos-arm64.zip
-bytes=1587787
-sha256=d2c19d3d06021a0051ae27fd624f77f4209760bd3925a2d912634a86aad7c3ba
+EnvLatch-0.2.1-macos-arm64.zip
+bytes=1683112
+sha256=da861c794ef56af0fe73b695fe8fbdb16ce52ac6809cc724edbbe9525016d08e
 
-EnvLatch-0.2.0-macos-arm64.dmg
-bytes=1924400
-sha256=85689589b01521af10f784e459a3241528d29c2057bbff156497113df08d6ccf
+EnvLatch-0.2.1-macos-arm64.dmg
+bytes=2050855
+sha256=83eacdecaadf488c973ee786ed6ccfb9db2e1c69884e43f4f023eb223945c6f7
 ```
 
 ## Known boundaries

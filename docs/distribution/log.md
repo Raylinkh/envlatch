@@ -49,5 +49,16 @@
   jobs.
 - The public screenshot was downloaded back and matched SHA-256
   `19696e6da131919a1c4291918bb1fb409c09d8c6c7c84390a369a6e48c411a92`.
-- Outbound response: GitHub README exposure only; no external community or
-  social post yet.
+- Published the stable v0.2.1 GitHub release:
+  https://github.com/Raylinkh/envlatch/releases/tag/v0.2.1
+- Distribution artifact: release notes plus signed/notarized arm64 ZIP and DMG
+  with adjacent SHA-256 checksums.
+- Proof:
+  - exact tag source `c24eccd5ef3cb913cf3423c2765c51d57f61a6e1`;
+  - public CI run `30300332620` passed;
+  - Apple accepted ZIP submission `0cb62703-9892-4edc-85f3-ff1f285e8761`;
+  - Apple accepted DMG submission `0cad7f06-a991-4f15-9138-7f853c084866`;
+  - all four public assets were downloaded into a fresh directory and passed
+    the full release verifier.
+- Outbound response: GitHub README and release exposure only; no external
+  community or social post yet.
