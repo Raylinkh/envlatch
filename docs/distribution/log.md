@@ -41,4 +41,6 @@
 - Embedded the sanitized capture in both English and Chinese READMEs.
 - Bundled pinned real provider logos locally; EnvLatch still makes no provider
   or CDN request at runtime.
+- Source candidate:
+  `514e5c12c055678ae55b8c2418c47aad0d2f907e`
 - Outbound response: pending after the source update reaches GitHub.

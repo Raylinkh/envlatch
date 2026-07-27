@@ -191,6 +191,51 @@ The inspection exposed local key and host names to the local accessibility
 client, so no screenshot or machine-specific names are included in this public
 receipt.
 
+## Provider-aware dashboard refresh
+
+Source candidate:
+`514e5c12c055678ae55b8c2418c47aad0d2f907e`
+
+The post-v0.2.0 source UI refresh passed:
+
+```text
+swift test --no-parallel
+60 tests
+15 suites
+0 failures
+exit=0
+```
+
+`scripts/build-app.sh` produced an ad-hoc-signed release app, and
+`codesign --verify --deep --strict` passed. The assembled app contains the 13
+locally bundled provider-logo assets plus their Lobe Icons MIT notice.
+
+A DEBUG-only isolated model supplied synthetic key names and no secret values.
+The real SwiftUI window was inspected in dark and forced-light appearances:
+
+- saved keys render as searchable provider-aware cards;
+- OpenAI, Anthropic, Gemini, OpenRouter, MiniMax, and common direct-key marks
+  are recognizable at card and preset-button sizes;
+- key groups remain secondary in the same scroll journey;
+- Agent setup remains collapsed by default;
+- Add Key presents five editable provider presets plus Custom; and
+- selecting MiniMax fills `MINIMAX_API_KEY`, the Anthropic contract,
+  `https://api.minimaxi.com/anthropic`, and `ANTHROPIC_AUTH_TOKEN` while the
+  secure value field remains empty.
+
+The sanitized dashboard capture is
+`docs/assets/marketing/envlatch-main-demo.png`:
+
+```text
+width=880
+height=700
+sha256=19696e6da131919a1c4291918bb1fb409c09d8c6c7c84390a369a6e48c411a92
+```
+
+The image is embedded in both public READMEs. This source refresh does not
+replace the already notarized v0.2.0 release artifacts; distributing this UI as
+a notarized binary requires a new versioned release.
+
 ## Unsigned preview artifact
 
 `scripts/package-unsigned-preview.sh` created:
