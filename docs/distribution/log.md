@@ -43,4 +43,11 @@
   or CDN request at runtime.
 - Source candidate:
   `514e5c12c055678ae55b8c2418c47aad0d2f907e`
-- Outbound response: pending after the source update reaches GitHub.
+- Public README exposure reached `main` at
+  `a86aa7e298ea9c2fd6c047aec7ecfb4a53386099`.
+- Public CI run `30289430656` passed all test, app-bundle, and unsigned-preview
+  jobs.
+- The public screenshot was downloaded back and matched SHA-256
+  `19696e6da131919a1c4291918bb1fb409c09d8c6c7c84390a369a6e48c411a92`.
+- Outbound response: GitHub README exposure only; no external community or
+  social post yet.
