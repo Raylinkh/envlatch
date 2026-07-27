@@ -17,11 +17,34 @@ struct CLIParserTests {
         )
         #expect(
             try CLIParser.parse(["run", "--", "codex", "--model", "gpt-5.6"])
-                == .run(profile: nil, program: "codex", arguments: ["--model", "gpt-5.6"])
+                == .run(selections: nil, program: "codex", arguments: ["--model", "gpt-5.6"])
         )
         #expect(
-            try CLIParser.parse(["run", "--using", "MiniMax", "Anthropic", "--", "claude"])
-                == .run(profile: "MiniMax Anthropic", program: "claude", arguments: [])
+            try CLIParser.parse(["run", "--using", "MiniMax Anthropic", "--", "claude"])
+                == .run(selections: ["MiniMax Anthropic"], program: "claude", arguments: [])
+        )
+        #expect(
+            try CLIParser.parse([
+                "run",
+                "--using", "OPENAI_API_KEY",
+                "--using", "Backend Tools",
+                "--",
+                "npm", "test",
+            ]) == .run(
+                selections: ["OPENAI_API_KEY", "Backend Tools"],
+                program: "npm",
+                arguments: ["test"]
+            )
+        )
+        #expect(
+            try CLIParser.parse([
+                "groups", "create", "Backend Tools",
+                "--using", "OPENAI_API_KEY",
+                "--using", "GITHUB_TOKEN",
+            ]) == .createGroup(
+                name: "Backend Tools",
+                credentialNames: ["OPENAI_API_KEY", "GITHUB_TOKEN"]
+            )
         )
     }
 
@@ -34,10 +57,16 @@ struct CLIParserTests {
         ["run", "--using"],
         ["run", "--using", "MiniMax"],
         ["run", "--using", "MiniMax", "--"],
+        ["run", "--using", "MiniMax", "Anthropic", "--", "claude"],
         ["pair"],
         ["list", "extra"],
         ["profiles", "extra"],
         ["groups", "extra"],
+        ["groups", "create"],
+        ["groups", "create", "Backend"],
+        ["groups", "create", "--using", "OPENAI_API_KEY"],
+        ["groups", "create", "Backend", "--using"],
+        ["groups", "create", "Backend", "--using", "OPENAI_API_KEY", "extra"],
         ["version", "extra"],
         ["--version", "extra"],
     ])

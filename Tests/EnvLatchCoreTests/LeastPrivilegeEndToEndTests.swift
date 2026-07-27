@@ -52,9 +52,6 @@ struct LeastPrivilegeEndToEndTests {
             )
         )
         let launches = LaunchProfileStore(fileURL: root.appendingPathComponent("launches.json"))
-        try launches.upsert(
-            LaunchProfile(name: "Integration", credentialNames: [first, second])
-        )
 
         let probe = """
         import hashlib, os, sys
@@ -79,18 +76,21 @@ struct LeastPrivilegeEndToEndTests {
             stderr: { _ in }
         )
         let arguments = [
-            "run", "--using", "Integration", "--",
+            "run",
+            "--using", first.rawValue,
+            "--using", second.rawValue,
+            "--",
             "/usr/bin/python3", "-c", probe,
             digest(values[first]), digest(values[second]),
             "literal * [x] ; unchanged",
         ]
         let command = try CLIParser.parse(arguments)
-        guard case .run(let profile, let program, let programArguments) = command else {
+        guard case .run(let selections, let program, let programArguments) = command else {
             Issue.record("Expected a parsed run command")
             return
         }
         let plan = try application.prepareRun(
-            profile: profile,
+            selections: selections,
             program: program,
             arguments: programArguments
         )

@@ -1,4 +1,4 @@
-EnvLatch 0.1.0 — UNSIGNED PREVIEW
+EnvLatch 0.2.0 — UNSIGNED PREVIEW
 
 This build is ad-hoc signed. It has not been signed with an Apple Developer ID
 certificate or notarized by Apple. GitHub hosts this file, but macOS Gatekeeper
@@ -9,7 +9,7 @@ Install:
 1. Double-click "Install EnvLatch.command".
 2. If macOS blocks it, open System Settings > Privacy & Security and choose
    Open Anyway only if you downloaded this DMG from:
-   https://github.com/Raylinkh/envlatch/releases/tag/v0.1.0
+   https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
 3. The installer places the app in ~/Applications, the CLI at
    ~/.local/bin/envlatch, and the shared agent skill under
    ~/.agents/skills/envlatch.
@@ -20,7 +20,7 @@ Install:
 
 Before mounting the DMG, verify its adjacent checksum file:
 
-  shasum -a 256 -c EnvLatch-0.1.0-macos-arm64-unsigned.dmg.sha256
+  shasum -a 256 -c EnvLatch-0.2.0-macos-arm64-unsigned.dmg.sha256
 
 EnvLatch never includes API keys in the DMG. Add credentials only through the
 installed app's secure field after you have verified the download.

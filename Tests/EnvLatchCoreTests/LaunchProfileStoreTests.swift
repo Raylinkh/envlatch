@@ -37,6 +37,26 @@ struct LaunchProfileStoreTests {
         }
     }
 
+    @Test func createRefusesCaseInsensitiveReplacement() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-create-only-group-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        let first = try CredentialName(validating: "OPENAI_API_KEY")
+        let second = try CredentialName(validating: "GITHUB_TOKEN")
+        let existing = try LaunchProfile(name: "Backend", credentialNames: [first])
+        try store.create(existing)
+        let before = try Data(contentsOf: store.fileURL)
+
+        #expect(throws: LaunchProfileError.profileAlreadyExists("backend")) {
+            try store.create(
+                LaunchProfile(name: "backend", credentialNames: [first, second])
+            )
+        }
+        #expect(try store.list() == [existing])
+        #expect(try Data(contentsOf: store.fileURL) == before)
+    }
+
     @Test func bootstrapsSingleKeyLaunchProfilesFromExistingEndpointMetadata() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("envlatch-profile-bootstrap-\(UUID().uuidString)", isDirectory: true)

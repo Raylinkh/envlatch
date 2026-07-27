@@ -229,7 +229,7 @@ struct VaultView: View {
             )
 
             Label(
-                "Use any saved key directly with `--using KEY_NAME`. Key groups are only for commands that need several keys.",
+                "Use one key directly, repeat `--using` for a one-off multi-key command, or save a reusable key group.",
                 systemImage: "exclamationmark.shield"
             )
             .font(.caption)

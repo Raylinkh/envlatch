@@ -74,9 +74,12 @@ struct InstallationInspectorTests {
         #expect(prompt.contains("envlatch help"))
         #expect(prompt.contains("envlatch groups"))
         #expect(prompt.contains("Any saved key works directly with `--using`"))
+        #expect(prompt.contains("envlatch run --using <saved-key> --using <saved-key>"))
+        #expect(prompt.contains("envlatch groups create \"<group-name>\""))
         #expect(prompt.contains("envlatch run --using <saved-key-or-group> -- <program> [args...]"))
         #expect(prompt.contains("Never silently use broad `envlatch run --`"))
         #expect(prompt.contains("this is not authorization"))
+        #expect(prompt.contains("Group creation accepts saved key names only"))
         #expect(prompt.contains("Never print, reveal, export, or write secret values"))
 
         try Data("stale skill".utf8).write(to: skillFiles[0])

@@ -7,7 +7,8 @@ release only.
 
 | Version | Supported |
 | --- | --- |
-| 0.1.x | Yes |
+| 0.2.x | Yes |
+| 0.1.x | No |
 | Older | No |
 
 ## Reporting a vulnerability
@@ -35,10 +36,14 @@ the variables selected for that launch. Debuggers, crash reporters, malicious
 dependencies, and provider-side compromise are outside EnvLatch's protection
 boundary. Use scoped provider credentials and spending limits.
 
-EnvLatch preserves the caller's existing environment. Selecting a saved key or
-optional key group limits which EnvLatch-managed Keychain items are read; it
-does not remove credentials or configuration variables already exported by a
-parent process.
+EnvLatch preserves the caller's existing environment. Selecting one saved key,
+repeating `--using` with several saved keys, or selecting one optional key group
+limits which EnvLatch-managed Keychain items are read; it does not remove
+credentials or configuration variables already exported by a parent process.
+Repeated selections are validated as one set before any value is read. Duplicate
+keys, groups mixed into a repeated selection, missing members, target-variable
+collisions, and conflicting endpoint configuration fail closed without
+last-writer precedence.
 
 The public EnvLatch rename intentionally retains the existing internal
 Keychain service `dev.agentkeyring.secrets` and Application Support directory

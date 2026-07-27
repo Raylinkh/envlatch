@@ -54,6 +54,17 @@ public struct LaunchProfileStore: Sendable {
         try write(profiles)
     }
 
+    public func create(_ profile: LaunchProfile) throws {
+        var profiles = try list()
+        guard !profiles.contains(where: {
+            $0.name.caseInsensitiveCompare(profile.name) == .orderedSame
+        }) else {
+            throw LaunchProfileError.profileAlreadyExists(profile.name)
+        }
+        profiles.append(profile)
+        try write(profiles)
+    }
+
     public func delete(named name: String) throws {
         let profiles = try list().filter {
             $0.name.caseInsensitiveCompare(name) != .orderedSame

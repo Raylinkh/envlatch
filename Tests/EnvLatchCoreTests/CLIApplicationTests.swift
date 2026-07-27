@@ -18,7 +18,7 @@ struct CLIApplicationTests {
         )
 
         #expect(application.run(arguments: ["--version"]) == 0)
-        #expect(output == ["EnvLatch 0.1.0"])
+        #expect(output == ["EnvLatch 0.2.0"])
         #expect(store.loadAllCallCount == 0)
     }
 
@@ -27,6 +27,8 @@ struct CLIApplicationTests {
         #expect(CLIApplication.usage.contains("exposes every saved key"))
         #expect(CLIApplication.usage.contains("<saved-key-or-group>"))
         #expect(CLIApplication.usage.contains("envlatch groups"))
+        #expect(CLIApplication.usage.contains("--using <saved-key> --using <saved-key>"))
+        #expect(CLIApplication.usage.contains("groups create"))
     }
 
     @Test func listAndDoctorNeverReadSecretValues() throws {
@@ -193,6 +195,238 @@ struct CLIApplicationTests {
         #expect(plan.environment["ANTHROPIC_BASE_URL"] == "https://api.minimaxi.com/anthropic")
         #expect(plan.environment[unselected.rawValue] == nil)
         #expect(store.loadedNames == [selected])
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func repeatedUsingLoadsOnlyTheFlattenedTransientSelection() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-transient-multi-key-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = try CredentialName(validating: "OPENAI_API_KEY")
+        let second = try CredentialName(validating: "GITHUB_TOKEN")
+        let unselected = try CredentialName(validating: "UNSELECTED_API_KEY")
+        let store = RecordingSecretStore(
+            names: [first, second, unselected],
+            values: [
+                first.rawValue: "openai-secret",
+                second.rawValue: "github-secret",
+                unselected.rawValue: "must-not-be-read",
+            ]
+        )
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"]
+        )
+
+        let plan = try application.prepareRun(
+            selections: [first.rawValue, second.rawValue],
+            program: "true",
+            arguments: []
+        )
+
+        #expect(plan.environment[first.rawValue] == "openai-secret")
+        #expect(plan.environment[second.rawValue] == "github-secret")
+        #expect(plan.environment[unselected.rawValue] == nil)
+        #expect(store.loadedNames == [first, second])
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func transientSelectionValidationFinishesBeforeAnySecretRead() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-transient-validation-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let saved = try CredentialName(validating: "OPENAI_API_KEY")
+        let store = RecordingSecretStore(
+            names: [saved],
+            values: [saved.rawValue: "must-not-be-read"]
+        )
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        try groups.upsert(LaunchProfile(name: "Backend", credentialNames: [saved]))
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            launchProfileStore: groups
+        )
+
+        #expect(throws: LaunchProfileError.profileNotFound("MISSING_API_KEY")) {
+            try application.prepareRun(
+                selections: [saved.rawValue, "MISSING_API_KEY"],
+                program: "true",
+                arguments: []
+            )
+        }
+        #expect(throws: LaunchProfileError.duplicateSelection(saved.rawValue)) {
+            try application.prepareRun(
+                selections: [saved.rawValue, saved.rawValue],
+                program: "true",
+                arguments: []
+            )
+        }
+        #expect(throws: LaunchProfileError.groupCannotBeCombined("Backend")) {
+            try application.prepareRun(
+                selections: ["Backend", saved.rawValue],
+                program: "true",
+                arguments: []
+            )
+        }
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func groupsCreatePersistsOnlyValidatedNonSecretMembership() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-cli-create-group-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = try CredentialName(validating: "OPENAI_API_KEY")
+        let second = try CredentialName(validating: "GITHUB_TOKEN")
+        let store = RecordingSecretStore(
+            names: [first, second],
+            values: [
+                first.rawValue: "must-not-be-read",
+                second.rawValue: "must-not-be-read",
+            ]
+        )
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        var output: [String] = []
+        let application = CLIApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json")),
+            launchProfileStore: groups,
+            identityProvider: { "identifier test" },
+            stdout: { output.append($0) },
+            stderr: { _ in }
+        )
+
+        #expect(application.run(arguments: [
+            "groups", "create", "Backend",
+            "--using", first.rawValue,
+            "--using", second.rawValue,
+        ]) == 0)
+        #expect(try groups.list() == [
+            LaunchProfile(name: "Backend", credentialNames: [first, second]),
+        ])
+        #expect(output == [
+            "created_group=Backend",
+            "keys=OPENAI_API_KEY,GITHUB_TOKEN",
+        ])
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+        let persisted = try String(contentsOf: groups.fileURL, encoding: .utf8)
+        #expect(!persisted.contains("must-not-be-read"))
+    }
+
+    @Test func groupsCreateFailsClosedBeforeWritingOrReading() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-cli-reject-group-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let saved = try CredentialName(validating: "OPENAI_API_KEY")
+        let store = RecordingSecretStore(
+            names: [saved],
+            values: [saved.rawValue: "must-not-be-read"]
+        )
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        var errors: [String] = []
+        let application = CLIApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json")),
+            launchProfileStore: groups,
+            identityProvider: { "identifier test" },
+            stdout: { _ in },
+            stderr: { errors.append($0) }
+        )
+
+        #expect(application.run(arguments: [
+            "groups", "create", "Backend",
+            "--using", saved.rawValue,
+            "--using", "MISSING_API_KEY",
+        ]) == 1)
+        #expect(!FileManager.default.fileExists(atPath: groups.fileURL.path))
+        #expect(errors.contains { $0.contains("MISSING_API_KEY") })
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func groupsCreateDoesNotReplaceAnExistingGroup() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-cli-existing-group-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = try CredentialName(validating: "OPENAI_API_KEY")
+        let second = try CredentialName(validating: "GITHUB_TOKEN")
+        let store = RecordingSecretStore(
+            names: [first, second],
+            values: [
+                first.rawValue: "must-not-be-read",
+                second.rawValue: "must-not-be-read",
+            ]
+        )
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        let existing = try LaunchProfile(name: "Backend", credentialNames: [first])
+        try groups.upsert(existing)
+        let before = try Data(contentsOf: groups.fileURL)
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            launchProfileStore: groups
+        )
+
+        #expect(application.run(arguments: [
+            "groups", "create", "backend",
+            "--using", first.rawValue,
+            "--using", second.rawValue,
+        ]) == 1)
+        #expect(try groups.list() == [existing])
+        #expect(try Data(contentsOf: groups.fileURL) == before)
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func groupsCreateRejectsEndpointConflictsBeforeWriting() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-cli-conflicting-group-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let first = try CredentialName(validating: "FIRST_API_KEY")
+        let second = try CredentialName(validating: "SECOND_API_KEY")
+        let endpoints = EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json"))
+        try endpoints.upsert(
+            EndpointProfile(
+                providerName: "First",
+                credentialName: first,
+                contract: .anthropic,
+                baseURL: "https://first.example.com"
+            )
+        )
+        try endpoints.upsert(
+            EndpointProfile(
+                providerName: "Second",
+                credentialName: second,
+                contract: .anthropic,
+                baseURL: "https://second.example.com"
+            )
+        )
+        let store = RecordingSecretStore(
+            names: [first, second],
+            values: [
+                first.rawValue: "must-not-be-read",
+                second.rawValue: "must-not-be-read",
+            ]
+        )
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: endpoints,
+            launchProfileStore: groups
+        )
+
+        #expect(application.run(arguments: [
+            "groups", "create", "Conflict",
+            "--using", first.rawValue,
+            "--using", second.rawValue,
+        ]) == 1)
+        #expect(!FileManager.default.fileExists(atPath: groups.fileURL.path))
+        #expect(store.loadedNames.isEmpty)
         #expect(store.loadAllCallCount == 0)
     }
 

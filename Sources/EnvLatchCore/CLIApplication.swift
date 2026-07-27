@@ -53,6 +53,14 @@ public struct CLIApplication {
                     }
                 }
                 return 0
+            case .createGroup(let name, let rawCredentialNames):
+                let profile = try createGroup(
+                    name: name,
+                    rawCredentialNames: rawCredentialNames
+                )
+                stdout("created_group=\(profile.name)")
+                stdout("keys=\(profile.credentialNames.map(\.rawValue).joined(separator: ","))")
+                return 0
             case .doctor:
                 let names = try store.listNames()
                 let pairedHosts = try pairedHostStore.list()
@@ -85,9 +93,9 @@ public struct CLIApplication {
                 stdout("shared_skill=\(inspector.sharedSkillURL.path)")
                 stdout("next=envlatch doctor")
                 return 0
-            case .run(let profile, let program, let programArguments):
+            case .run(let selections, let program, let programArguments):
                 let plan = try prepareRun(
-                    profile: profile,
+                    selections: selections,
                     program: program,
                     arguments: programArguments
                 )
@@ -110,11 +118,23 @@ public struct CLIApplication {
     }
 
     public func prepareRun(program: String, arguments: [String]) throws -> ExecutionPlan {
-        try prepareRun(profile: nil, program: program, arguments: arguments)
+        try prepareRun(selections: nil, program: program, arguments: arguments)
     }
 
     public func prepareRun(
         profile selectionIdentifier: String?,
+        program: String,
+        arguments: [String]
+    ) throws -> ExecutionPlan {
+        try prepareRun(
+            selections: selectionIdentifier.map { [$0] },
+            program: program,
+            arguments: arguments
+        )
+    }
+
+    public func prepareRun(
+        selections selectionIdentifiers: [String]?,
         program: String,
         arguments: [String]
     ) throws -> ExecutionPlan {
@@ -125,76 +145,25 @@ public struct CLIApplication {
 
         let credentials: [String: String]
         let configuration: [String: String]
-        if let selectionIdentifier {
+        if let selectionIdentifiers {
             let availableNames = try store.listNames()
-            let exactCredential = availableNames.first {
-                $0.rawValue == selectionIdentifier
-            }
-            let matchingGroup = try launchProfileStore.list().first {
-                $0.name.caseInsensitiveCompare(selectionIdentifier) == .orderedSame
-            }
-            if exactCredential != nil, matchingGroup != nil {
-                throw LaunchProfileError.ambiguousSelection(selectionIdentifier)
-            }
-
-            let selectedNames: [CredentialName]
-            let selectionName: String
-            if let exactCredential {
-                selectedNames = [exactCredential]
-                selectionName = exactCredential.rawValue
-            } else if let matchingGroup {
-                selectedNames = matchingGroup.credentialNames
-                selectionName = matchingGroup.name
-            } else {
-                throw LaunchProfileError.profileNotFound(selectionIdentifier)
-            }
-
-            let available = Set(availableNames)
-            for credential in selectedNames where !available.contains(credential) {
-                throw LaunchProfileError.missingCredential(
-                    profile: selectionName,
-                    credential: credential.rawValue
-                )
-            }
-
-            let endpoints = Dictionary(
-                uniqueKeysWithValues: try endpointProfileStore.list().map { ($0.credentialName, $0) }
+            let groups = try launchProfileStore.list()
+            let selectedNames = try resolveSelectionIdentifiers(
+                selectionIdentifiers,
+                availableNames: availableNames,
+                groups: groups
             )
-            var targetOwners: [String: CredentialName] = [:]
-            var resolvedConfiguration: [String: String] = [:]
-            var bindings: [(source: CredentialName, targets: [String])] = []
-
-            for source in selectedNames {
-                let endpoint = endpoints[source]
-                let targets = endpoint?.secretEnvironmentNames ?? [source.rawValue]
-                for target in targets {
-                    if let owner = targetOwners[target], owner != source {
-                        throw LaunchProfileError.conflictingSecretEnvironment(
-                            name: target,
-                            first: owner.rawValue,
-                            second: source.rawValue
-                        )
-                    }
-                    targetOwners[target] = source
-                }
-                for (name, value) in endpoint?.configurationEnvironment ?? [:] {
-                    if let existing = resolvedConfiguration[name], existing != value {
-                        throw LaunchProfileError.conflictingConfigurationEnvironment(name: name)
-                    }
-                    resolvedConfiguration[name] = value
-                }
-                bindings.append((source, targets))
-            }
+            let bindingPlan = try makeBindingPlan(for: selectedNames)
 
             var selectedCredentials: [String: String] = [:]
-            for binding in bindings {
+            for binding in bindingPlan.bindings {
                 let value = try store.load(name: binding.source)
                 for target in binding.targets {
                     selectedCredentials[target] = value
                 }
             }
             credentials = selectedCredentials
-            configuration = resolvedConfiguration
+            configuration = bindingPlan.configuration
         } else {
             let names = try store.listNames()
             guard !names.isEmpty else {
@@ -217,6 +186,7 @@ public struct CLIApplication {
     Usage:
       envlatch list
       envlatch groups
+      envlatch groups create <group-name> --using <saved-key> [--using <saved-key> ...]
       envlatch doctor
       envlatch version
       envlatch pair <agent-or-host-name>
@@ -224,10 +194,148 @@ public struct CLIApplication {
 
     Preferred least privilege:
       envlatch run --using <saved-key-or-group> -- <program> [args...]
+      envlatch run --using <saved-key> --using <saved-key> -- <program> [args...]
 
     Broad compatibility (exposes every saved key):
       envlatch run -- <program> [args...]
     """
+
+    private struct SecretBinding {
+        let source: CredentialName
+        let targets: [String]
+    }
+
+    private struct BindingPlan {
+        let bindings: [SecretBinding]
+        let configuration: [String: String]
+    }
+
+    private func createGroup(
+        name: String,
+        rawCredentialNames: [String]
+    ) throws -> LaunchProfile {
+        let availableNames = try store.listNames()
+        let existingGroups = try launchProfileStore.list()
+        if availableNames.contains(where: {
+            $0.rawValue.caseInsensitiveCompare(name) == .orderedSame
+        }) {
+            throw LaunchProfileError.ambiguousSelection(name)
+        }
+        if existingGroups.contains(where: {
+            $0.name.caseInsensitiveCompare(name) == .orderedSame
+        }) {
+            throw LaunchProfileError.profileAlreadyExists(name)
+        }
+
+        let profile = try LaunchProfile(
+            name: name,
+            credentialNames: try rawCredentialNames.map(CredentialName.init(validating:))
+        )
+        let available = Set(availableNames)
+        for credential in profile.credentialNames where !available.contains(credential) {
+            throw LaunchProfileError.missingCredential(
+                profile: profile.name,
+                credential: credential.rawValue
+            )
+        }
+        _ = try makeBindingPlan(for: profile.credentialNames)
+        try launchProfileStore.create(profile)
+        return profile
+    }
+
+    private func resolveSelectionIdentifiers(
+        _ identifiers: [String],
+        availableNames: [CredentialName],
+        groups: [LaunchProfile]
+    ) throws -> [CredentialName] {
+        guard !identifiers.isEmpty else {
+            throw CLIParseError.missingProfile
+        }
+        let available = Set(availableNames)
+        var selected: [CredentialName] = []
+        var seen: Set<CredentialName> = []
+        var seenIdentifiers: Set<String> = []
+
+        for identifier in identifiers {
+            guard seenIdentifiers.insert(identifier).inserted else {
+                throw LaunchProfileError.duplicateSelection(identifier)
+            }
+            let exactCredential = availableNames.first {
+                $0.rawValue == identifier
+            }
+            let collidingCredential = availableNames.first {
+                $0.rawValue.caseInsensitiveCompare(identifier) == .orderedSame
+            }
+            let matchingGroup = groups.first {
+                $0.name.caseInsensitiveCompare(identifier) == .orderedSame
+            }
+            if collidingCredential != nil, matchingGroup != nil {
+                throw LaunchProfileError.ambiguousSelection(identifier)
+            }
+            if identifiers.count > 1, matchingGroup != nil {
+                throw LaunchProfileError.groupCannotBeCombined(identifier)
+            }
+
+            let candidates: [CredentialName]
+            let selectionName: String
+            if let exactCredential {
+                candidates = [exactCredential]
+                selectionName = exactCredential.rawValue
+            } else if let matchingGroup {
+                candidates = matchingGroup.credentialNames
+                selectionName = matchingGroup.name
+            } else {
+                throw LaunchProfileError.profileNotFound(identifier)
+            }
+
+            for credential in candidates {
+                guard available.contains(credential) else {
+                    throw LaunchProfileError.missingCredential(
+                        profile: selectionName,
+                        credential: credential.rawValue
+                    )
+                }
+                if seen.insert(credential).inserted {
+                    selected.append(credential)
+                }
+            }
+        }
+        return selected
+    }
+
+    private func makeBindingPlan(
+        for selectedNames: [CredentialName]
+    ) throws -> BindingPlan {
+        let endpoints = Dictionary(
+            uniqueKeysWithValues: try endpointProfileStore.list().map { ($0.credentialName, $0) }
+        )
+        var targetOwners: [String: CredentialName] = [:]
+        var configuration: [String: String] = [:]
+        var bindings: [SecretBinding] = []
+
+        for source in selectedNames {
+            let endpoint = endpoints[source]
+            let targets = endpoint?.secretEnvironmentNames ?? [source.rawValue]
+            for target in targets {
+                if let owner = targetOwners[target], owner != source {
+                    throw LaunchProfileError.conflictingSecretEnvironment(
+                        name: target,
+                        first: owner.rawValue,
+                        second: source.rawValue
+                    )
+                }
+                targetOwners[target] = source
+            }
+            for (name, value) in endpoint?.configurationEnvironment ?? [:] {
+                if let existing = configuration[name], existing != value {
+                    throw LaunchProfileError.conflictingConfigurationEnvironment(name: name)
+                }
+                configuration[name] = value
+            }
+            bindings.append(SecretBinding(source: source, targets: targets))
+        }
+        return BindingPlan(bindings: bindings, configuration: configuration)
+    }
 
     private func linkStatusDescription(_ status: CLILinkStatus) -> String {
         switch status {

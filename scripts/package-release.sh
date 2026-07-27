@@ -3,7 +3,9 @@ set -euo pipefail
 
 script_dir="${0:A:h}"
 project_root="${script_dir:h}"
-version="0.1.0"
+version=$(/usr/libexec/PlistBuddy \
+  -c "Print :CFBundleShortVersionString" \
+  "$project_root/Resources/Info.plist")
 app="$project_root/dist/EnvLatch.app"
 signing_identity="${ENVLATCH_CODESIGN_IDENTITY:-}"
 notary_profile="${ENVLATCH_NOTARY_PROFILE:-}"

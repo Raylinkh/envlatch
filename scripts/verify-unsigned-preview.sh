@@ -75,6 +75,15 @@ canonical_skill="$success_root/user/.agents/skills/envlatch"
 codesign --verify --deep --strict "$installed_app"
 test "$("$installed_cli" --version)" = "EnvLatch $version"
 test "${installed_cli:A}" = "${installed_app:A}/Contents/MacOS/EnvLatch"
+help_output=$("$installed_cli" help)
+[[ "$help_output" == *"envlatch run --using <saved-key> --using <saved-key>"* ]]
+[[ "$help_output" == *"envlatch groups create <group-name>"* ]]
+grep -Fq \
+  'envlatch run --using <saved-key-name> --using <saved-key-name>' \
+  "$canonical_skill/SKILL.md"
+grep -Fq \
+  'envlatch groups create "<group-name>"' \
+  "$canonical_skill/SKILL.md"
 for skill_link in \
   "$success_root/user/.codex/skills/envlatch" \
   "$success_root/user/.claude/skills/envlatch" \

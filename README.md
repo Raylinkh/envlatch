@@ -28,6 +28,7 @@
 ```sh
 envlatch run --using ANTHROPIC_API_KEY -- claude
 envlatch run --using GITHUB_TOKEN -- gh auth status
+envlatch run --using OPENAI_API_KEY --using GITHUB_TOKEN -- npm test
 envlatch run --using "Backend" -- npm test
 ```
 
@@ -39,8 +40,9 @@ provider-specific command, proxy, or code change is required.
 
 - **One command for every provider and tool.** Use a saved key by name or an
   optional key group; neither selects a hard-coded provider integration.
-- **Multiple keys without broad exposure.** A key group contains the exact keys
-  one command needs, while unselected EnvLatch keys are not read from Keychain.
+- **Multiple keys without broad exposure.** Repeat `--using` for a one-off
+  multi-key command, or save the same exact names as a reusable key group.
+  Unselected EnvLatch keys are not read from Keychain.
 - **Endpoint-compatible.** Per-key metadata can map a saved credential to the
   variable and base URL expected by Anthropic-, OpenAI-, or generic clients.
 - **Agent-friendly without revealing values.** The bundled portable skill
@@ -88,16 +90,29 @@ boundary.
 envlatch run --using OPENAI_API_KEY -- python3 server.py
 ```
 
-5. Only when one command needs several keys, expand **Key groups**, choose
-   **New Key Group**, and select the exact keys it needs:
+5. When one command needs several keys once, repeat `--using` with each exact
+   saved key name:
 
 ```sh
+envlatch run \
+  --using OPENAI_API_KEY \
+  --using GITHUB_TOKEN \
+  -- python3 server.py
+```
+
+6. For a reusable combination, create a group from non-secret saved names in
+   the GUI or CLI, then use that group by itself:
+
+```sh
+envlatch groups create "Backend" \
+  --using OPENAI_API_KEY \
+  --using GITHUB_TOKEN
 envlatch run --using "Backend" -- python3 server.py
 ```
 
-For example, the optional `Backend` group can select both `OPENAI_API_KEY` and
-`GITHUB_TOKEN`. Python, Node, Swift, shell commands, and their SDKs read those
-variables normally:
+`groups create` never reads a value and never replaces an existing group.
+Python, Node, Swift, shell commands, and their SDKs read the resulting variables
+normally:
 
 ```python
 import os
@@ -123,12 +138,13 @@ record:
 
 A saved key can therefore remain `MINIMAX_API_KEY` while an Anthropic-compatible
 client receives the same value as `ANTHROPIC_AUTH_TOKEN` plus the configured
-`ANTHROPIC_BASE_URL`. Selecting that saved key directly—or including it in an
-optional key group—makes those bindings available to the command.
+`ANTHROPIC_BASE_URL`. Selecting that saved key directly, in a repeated saved-key
+selection, or through one optional key group makes those bindings available.
 
-EnvLatch validates the entire selection before reading any value. It
-rejects missing keys, two sources targeting the same credential variable, and
-conflicting contract configuration rather than choosing a last writer.
+EnvLatch validates the entire selection before reading any value. It rejects
+missing or duplicate keys, a group mixed into repeated selectors, two sources
+targeting the same credential variable, and conflicting contract configuration
+rather than choosing a last writer.
 
 ## Agent and host setup
 
@@ -140,12 +156,13 @@ envlatch pair "My build agent"
 envlatch doctor
 envlatch help
 envlatch groups
+envlatch groups create "Backend" --using OPENAI_API_KEY --using GITHUB_TOKEN
 ```
 
 The GUI includes a copyable setup prompt with those commands and the
-least-privilege launch rule. The installed skill uses a saved key name directly
-and asks for an optional key group only when a command needs several keys; it
-must not silently fall back to broad access.
+least-privilege launch rule. The installed skill uses one saved key directly,
+repeats `--using` for a one-off multi-key command, and can create a reusable
+group from saved names only. It must not silently fall back to broad access.
 
 Safe inspection commands never read secret values:
 
@@ -190,7 +207,7 @@ boundary and reporting process.
 ## Development
 
 ```sh
-swift test
+swift test --no-parallel
 ./scripts/build-app.sh
 dist/EnvLatch.app/Contents/MacOS/EnvLatch --version
 ```
@@ -206,7 +223,7 @@ builds the app, and verifies its structural code signature.
 
 ### Unsigned preview
 
-The GitHub `v0.1.0` pre-release includes an explicitly labeled, ad-hoc-signed
+The GitHub `v0.2.0` pre-release includes an explicitly labeled, ad-hoc-signed
 arm64 DMG and adjacent SHA-256 checksum. It is a convenience build for testers,
 not an Apple-verified distribution. Gatekeeper will require **Privacy &
 Security → Open Anyway** for the installer and may require it again for the
@@ -215,7 +232,7 @@ app.
 Download both release assets and verify before mounting:
 
 ```sh
-shasum -a 256 -c EnvLatch-0.1.0-macos-arm64-unsigned.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.0-macos-arm64-unsigned.dmg.sha256
 ```
 
 The DMG contains `Install EnvLatch.command`, which transactionally installs the

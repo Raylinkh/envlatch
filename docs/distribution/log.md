@@ -10,3 +10,7 @@
   caption, safety boundary, repository link, and hashtags in
   `docs/distribution/xiaohongshu-v0.1.0.md`
 - Outbound distribution: not yet posted to an external community or audience
+- Prepared v0.2.0 GitHub release/distribution artifact:
+  `docs/distribution/envlatch-v0.2.0-multi-key.md`
+- Superseded the unposted v0.1.0 Xiaohongshu copy because it described key
+  groups as the only multi-key path

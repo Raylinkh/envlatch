@@ -121,12 +121,16 @@ public struct InstallationInspector: Sendable {
         2. Run `envlatch doctor` and confirm `agent_pairing=paired`.
         3. Run `envlatch help` and follow its usage.
         4. Run `envlatch list` to see saved key names. Any saved key works directly with `--using`.
-        5. If a command needs multiple keys, run `envlatch groups` to find an optional named key group and its non-secret endpoint bindings.
-        6. Run the command exactly as:
+        5. If one command needs several saved keys once, repeat `--using` with exact saved key names:
+           envlatch run --using <saved-key> --using <saved-key> -- <program> [args...]
+        6. For a reusable combination, create a non-secret key group:
+           envlatch groups create "<group-name>" --using <saved-key> --using <saved-key>
+           Run `envlatch groups` to inspect saved group membership and endpoint bindings.
+        7. Run a single saved key or reusable group exactly as:
            envlatch run --using <saved-key-or-group> -- <program> [args...]
-           If no matching key or group exists, ask the user to configure it in the GUI. Never silently use broad `envlatch run --`, which exposes every saved key.
+           If a required saved key is missing, ask the user to add it in the EnvLatch GUI. Never silently use broad `envlatch run --`, which exposes every saved key.
 
-        Use `envlatch list` only to check saved environment-variable names. Never print, reveal, export, or write secret values to files or shell profiles.
+        Group creation accepts saved key names only and never reads their values. Pairing is status, not authorization. Never print, reveal, export, or write secret values to files or shell profiles.
         """
     }
 

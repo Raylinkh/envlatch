@@ -5,6 +5,9 @@ public enum LaunchProfileError: Error, Equatable, LocalizedError, Sendable {
     case emptyCredentials
     case duplicateCredential(String)
     case profileNotFound(String)
+    case profileAlreadyExists(String)
+    case duplicateSelection(String)
+    case groupCannotBeCombined(String)
     case ambiguousSelection(String)
     case missingCredential(profile: String, credential: String)
     case conflictingSecretEnvironment(name: String, first: String, second: String)
@@ -21,6 +24,12 @@ public enum LaunchProfileError: Error, Equatable, LocalizedError, Sendable {
             "The key group contains \(name) more than once."
         case .profileNotFound(let name):
             "No saved key or key group is named \(name). Run `envlatch list` or `envlatch groups` to see available names."
+        case .profileAlreadyExists(let name):
+            "Key group \(name) already exists. Edit it in the EnvLatch GUI or choose another name."
+        case .duplicateSelection(let name):
+            "The transient selection includes \(name) more than once."
+        case .groupCannotBeCombined(let name):
+            "Key group \(name) must be used by itself. Repeat `--using` only with saved key names."
         case .ambiguousSelection(let name):
             "A saved key and key group are both named \(name). Rename or delete the key group before launching."
         case .missingCredential(let profile, let credential):

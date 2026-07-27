@@ -27,6 +27,7 @@
 ```sh
 envlatch run --using ANTHROPIC_API_KEY -- claude
 envlatch run --using GITHUB_TOKEN -- gh auth status
+envlatch run --using OPENAI_API_KEY --using GITHUB_TOKEN -- npm test
 envlatch run --using "Backend" -- npm test
 ```
 
@@ -37,8 +38,8 @@ EnvLatch SDK、不需要 Provider 专用命令、不需要代理，也不需要�
 
 - **所有 Provider 和工具共用一条命令。** 直接选择已保存的 Key，或选择可选的 Key
   Group；EnvLatch 不把你锁进某个 Provider。
-- **需要多个 Key，也不用全量暴露。** Key Group 只包含这次命令真正需要的 Key；未选择的
-  EnvLatch Key 不会从钥匙串读取。
+- **需要多个 Key，也不用全量暴露。** 临时使用时重复 `--using`；经常复用时，把同一组
+  Key 名称保存成 Key Group。未选择的 EnvLatch Key 不会从钥匙串读取。
 - **兼容自定义 Endpoint。** 每个 Key 都可以映射到 Anthropic、OpenAI 或 Gemini 客户端
   期望的环境变量和 Base URL。
 - **Agent 能使用，但看不到值。** 安装时附带的 Skill 会教任何 Agent 或 Host 查看非敏感
@@ -83,15 +84,27 @@ open "$HOME/Applications/EnvLatch.app"
 envlatch run --using OPENAI_API_KEY -- python3 server.py
 ```
 
-5. 只有当一条命令确实需要多个 Key 时，才展开 **Key groups**，选择
-   **New Key Group**，并勾选它需要的 Key：
+5. 一条命令临时需要多个 Key 时，对每个已保存的 Key 名称重复 `--using`：
 
 ```sh
+envlatch run \
+  --using OPENAI_API_KEY \
+  --using GITHUB_TOKEN \
+  -- python3 server.py
+```
+
+6. 如果这个组合会反复使用，可以在 GUI 或 CLI 中保存只包含名称的 Key Group，再单独
+   选择这个 Group：
+
+```sh
+envlatch groups create "Backend" \
+  --using OPENAI_API_KEY \
+  --using GITHUB_TOKEN
 envlatch run --using "Backend" -- python3 server.py
 ```
 
-例如，可选的 `Backend` Group 可以同时选择 `OPENAI_API_KEY` 和 `GITHUB_TOKEN`。
-Python、Node、Swift、Shell 及其 SDK 都照常读取环境变量：
+`groups create` 不读取任何值，也不会覆盖已有 Group。Python、Node、Swift、Shell 及其
+SDK 都照常读取环境变量：
 
 ```python
 import os
@@ -112,11 +125,12 @@ Endpoint 元数据属于某个已保存的 Key，但永远不包含它的值。�
 - 目标客户端期望的凭证环境变量名。
 
 例如，Key 本身可以继续叫 `MINIMAX_API_KEY`，Anthropic 兼容客户端则会收到同一个值的
-`ANTHROPIC_AUTH_TOKEN`，以及配置好的 `ANTHROPIC_BASE_URL`。直接选择这个 Key，或把它
-放进可选的 Key Group，都会得到这些绑定。
+`ANTHROPIC_AUTH_TOKEN`，以及配置好的 `ANTHROPIC_BASE_URL`。直接选择这个 Key、在一次
+命令中重复选择多个 Key，或通过一个可选 Key Group 启动，都会得到这些绑定。
 
-EnvLatch 会在读取任何值之前验证完整选择。缺失 Key、两个来源映射到同一个凭证变量，或
-Contract 配置冲突时，它会直接拒绝启动，而不是采用“最后一个覆盖前一个”的结果。
+EnvLatch 会在读取任何值之前验证完整选择。缺失或重复 Key、在重复选择中混入 Group、两个
+来源映射到同一个凭证变量，或 Contract 配置冲突时，它会直接拒绝启动，而不是采用“最后一个
+覆盖前一个”的结果。
 
 ## Agent 和 Host 设置
 
@@ -127,10 +141,12 @@ envlatch pair "My build agent"
 envlatch doctor
 envlatch help
 envlatch groups
+envlatch groups create "Backend" --using OPENAI_API_KEY --using GITHUB_TOKEN
 ```
 
-GUI 会显示可复制的设置 Prompt，包含这些命令和最小权限规则。已安装的 Skill 默认直接使用
-Key 名称；只有一条命令需要多个 Key 时才要求 Key Group，并且绝不能悄悄回退到全量模式。
+GUI 会显示可复制的设置 Prompt，包含这些命令和最小权限规则。已安装的 Skill 会直接使用一个
+Key 名称；临时多 Key 命令会重复 `--using`；需要复用时，则只用已保存的 Key 名称创建
+Group。它绝不能悄悄回退到全量模式。
 
 下面这些安全检查命令不会读取 Secret 值：
 
@@ -167,7 +183,7 @@ Support 目录 `AgentKeyring`，以便原有值继续留在同一个存储中，
 ## 开发
 
 ```sh
-swift test
+swift test --no-parallel
 ./scripts/build-app.sh
 dist/EnvLatch.app/Contents/MacOS/EnvLatch --version
 ```
@@ -181,14 +197,14 @@ GitHub Actions 会运行测试、校验脚本和 Bundle 元数据、构建 App�
 
 ### 未签名预览版
 
-GitHub `v0.1.0` Prerelease 包含明确标注的 ad-hoc 签名 arm64 DMG 和相邻的 SHA-256
+GitHub `v0.2.0` Prerelease 包含明确标注的 ad-hoc 签名 arm64 DMG 和相邻的 SHA-256
 Checksum。它是方便测试的构建，不是 Apple 验证的发行版。Gatekeeper 会要求在
 **隐私与安全性 → 仍要打开** 中允许 Installer，也可能再次要求允许 App。
 
 下载两个 Release Asset 后先验证：
 
 ```sh
-shasum -a 256 -c EnvLatch-0.1.0-macos-arm64-unsigned.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.0-macos-arm64-unsigned.dmg.sha256
 ```
 
 DMG 内的 `Install EnvLatch.command` 会事务式安装 App、CLI 和共享 Skill。只有当文件来自
