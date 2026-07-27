@@ -18,7 +18,7 @@ struct CLIApplicationTests {
         )
 
         #expect(application.run(arguments: ["--version"]) == 0)
-        #expect(output == ["EnvLatch 0.2.0"])
+        #expect(output == ["EnvLatch 0.2.1"])
         #expect(store.loadAllCallCount == 0)
     }
 

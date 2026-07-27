@@ -228,12 +228,12 @@ builds the app, and verifies its structural code signature.
 
 ### Signed and notarized release
 
-The recommended `v0.2.0` arm64 DMG and ZIP are signed with a Developer ID
+The recommended `v0.2.1` arm64 DMG and ZIP are signed with a Developer ID
 Application certificate, notarized by Apple, stapled, and accepted by
 Gatekeeper. Download the DMG and its adjacent checksum:
 
 ```sh
-shasum -a 256 -c EnvLatch-0.2.0-macos-arm64.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.1-macos-arm64.dmg.sha256
 ```
 
 The DMG contains `EnvLatch.app`, `Install EnvLatch.command`, a release notice,
