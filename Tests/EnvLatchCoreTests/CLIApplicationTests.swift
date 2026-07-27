@@ -382,6 +382,35 @@ struct CLIApplicationTests {
         #expect(store.loadAllCallCount == 0)
     }
 
+    @Test func groupsCreateRejectsTrimmedSavedKeyCollisionBeforeWritingOrReading() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-cli-trimmed-group-collision-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let colliding = try CredentialName(validating: "OPENAI_API_KEY")
+        let member = try CredentialName(validating: "GITHUB_TOKEN")
+        let store = RecordingSecretStore(
+            names: [colliding, member],
+            values: [
+                colliding.rawValue: "must-not-be-read",
+                member.rawValue: "must-not-be-read",
+            ]
+        )
+        let groups = LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json"))
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            launchProfileStore: groups
+        )
+
+        #expect(application.run(arguments: [
+            "groups", "create", " OPENAI_API_KEY ",
+            "--using", member.rawValue,
+        ]) == 1)
+        #expect(!FileManager.default.fileExists(atPath: groups.fileURL.path))
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
     @Test func groupsCreateRejectsEndpointConflictsBeforeWriting() throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("envlatch-cli-conflicting-group-\(UUID().uuidString)", isDirectory: true)
@@ -424,6 +453,44 @@ struct CLIApplicationTests {
             "groups", "create", "Conflict",
             "--using", first.rawValue,
             "--using", second.rawValue,
+        ]) == 1)
+        #expect(!FileManager.default.fileExists(atPath: groups.fileURL.path))
+        #expect(store.loadedNames.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+    }
+
+    @Test func rejectedGroupCreationDoesNotPersistLegacyMigration() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-cli-rejected-legacy-migration-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let legacyCredential = try CredentialName(validating: "OPENAI_API_KEY")
+        let endpoints = EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json"))
+        try endpoints.upsert(
+            EndpointProfile(
+                providerName: "Legacy",
+                credentialName: legacyCredential,
+                contract: .openAIChat,
+                baseURL: "https://api.example.com"
+            )
+        )
+        let groups = LaunchProfileStore(
+            fileURL: root.appendingPathComponent("groups.json"),
+            legacyEndpointProfileStore: endpoints
+        )
+        let store = RecordingSecretStore(
+            names: [legacyCredential],
+            values: [legacyCredential.rawValue: "must-not-be-read"]
+        )
+        let application = makeApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            endpointProfileStore: endpoints,
+            launchProfileStore: groups
+        )
+
+        #expect(application.run(arguments: [
+            "groups", "create", "New",
+            "--using", "MISSING_API_KEY",
         ]) == 1)
         #expect(!FileManager.default.fileExists(atPath: groups.fileURL.path))
         #expect(store.loadedNames.isEmpty)

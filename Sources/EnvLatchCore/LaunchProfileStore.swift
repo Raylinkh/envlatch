@@ -24,17 +24,19 @@ public struct LaunchProfileStore: Sendable {
         if FileManager.default.fileExists(atPath: fileURL.path) {
             return try read().sorted(by: Self.sort)
         }
-        guard let legacyEndpointProfileStore else {
-            return []
-        }
-        let migrated = try legacyEndpointProfileStore.list().map {
-            try LaunchProfile(name: $0.providerName, credentialNames: [$0.credentialName])
-        }
+        let migrated = try legacyProfiles()
         guard !migrated.isEmpty else {
             return []
         }
         try write(migrated)
         return migrated.sorted(by: Self.sort)
+    }
+
+    public func listWithoutMigrating() throws -> [LaunchProfile] {
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            return try read().sorted(by: Self.sort)
+        }
+        return try legacyProfiles().sorted(by: Self.sort)
     }
 
     public func profile(named name: String) throws -> LaunchProfile {
@@ -55,7 +57,7 @@ public struct LaunchProfileStore: Sendable {
     }
 
     public func create(_ profile: LaunchProfile) throws {
-        var profiles = try list()
+        var profiles = try listWithoutMigrating()
         guard !profiles.contains(where: {
             $0.name.caseInsensitiveCompare(profile.name) == .orderedSame
         }) else {
@@ -81,6 +83,15 @@ public struct LaunchProfileStore: Sendable {
 
     private func read() throws -> [LaunchProfile] {
         try JSONDecoder().decode([LaunchProfile].self, from: Data(contentsOf: fileURL))
+    }
+
+    private func legacyProfiles() throws -> [LaunchProfile] {
+        guard let legacyEndpointProfileStore else {
+            return []
+        }
+        return try legacyEndpointProfileStore.list().map {
+            try LaunchProfile(name: $0.providerName, credentialNames: [$0.credentialName])
+        }
     }
 
     private func write(_ profiles: [LaunchProfile]) throws {

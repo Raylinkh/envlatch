@@ -214,23 +214,23 @@ public struct CLIApplication {
         name: String,
         rawCredentialNames: [String]
     ) throws -> LaunchProfile {
-        let availableNames = try store.listNames()
-        let existingGroups = try launchProfileStore.list()
-        if availableNames.contains(where: {
-            $0.rawValue.caseInsensitiveCompare(name) == .orderedSame
-        }) {
-            throw LaunchProfileError.ambiguousSelection(name)
-        }
-        if existingGroups.contains(where: {
-            $0.name.caseInsensitiveCompare(name) == .orderedSame
-        }) {
-            throw LaunchProfileError.profileAlreadyExists(name)
-        }
-
         let profile = try LaunchProfile(
             name: name,
             credentialNames: try rawCredentialNames.map(CredentialName.init(validating:))
         )
+        let availableNames = try store.listNames()
+        let existingGroups = try launchProfileStore.listWithoutMigrating()
+        if availableNames.contains(where: {
+            $0.rawValue.caseInsensitiveCompare(profile.name) == .orderedSame
+        }) {
+            throw LaunchProfileError.ambiguousSelection(profile.name)
+        }
+        if existingGroups.contains(where: {
+            $0.name.caseInsensitiveCompare(profile.name) == .orderedSame
+        }) {
+            throw LaunchProfileError.profileAlreadyExists(profile.name)
+        }
+
         let available = Set(availableNames)
         for credential in profile.credentialNames where !available.contains(credential) {
             throw LaunchProfileError.missingCredential(

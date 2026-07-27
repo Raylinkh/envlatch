@@ -37,7 +37,7 @@ public enum CLIParseError: Error, Equatable, LocalizedError, Sendable {
         case .missingGroupCredentials:
             "Select at least one saved key with `--using`."
         case .missingProfile:
-            "Use `envlatch run --using <key-or-group> [--using <key-or-group> ...] -- <program> [args...]`."
+            "Use one `<saved-key-or-group>`, or repeat `--using <saved-key>` for exact saved keys. Run `envlatch help` for examples."
         case .missingRunSeparator:
             "Use `envlatch run -- <program> [args...]`."
         case .missingProgram:
