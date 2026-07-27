@@ -1,0 +1,17 @@
+EnvLatch signed and notarized release
+
+This disk image and EnvLatch.app are signed with a Developer ID Application
+certificate, notarized by Apple, and stapled for offline Gatekeeper checks.
+
+Double-click "Install EnvLatch.command" to transactionally install:
+
+- EnvLatch.app under ~/Applications
+- the envlatch CLI under ~/.local/bin
+- the shared agent skill under ~/.agents/skills
+
+The installer never copies or exports saved secret values. EnvLatch keeps them
+in macOS Keychain and releases selected values only to a command launched with
+envlatch run.
+
+Official project:
+https://github.com/Raylinkh/envlatch

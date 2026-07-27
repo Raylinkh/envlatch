@@ -221,30 +221,34 @@ builds the app, and verifies its structural code signature.
 
 ## Binary releases
 
-### Unsigned preview
+### Signed and notarized release
 
-The GitHub `v0.2.0` pre-release includes an explicitly labeled, ad-hoc-signed
-arm64 DMG and adjacent SHA-256 checksum. It is a convenience build for testers,
-not an Apple-verified distribution. Gatekeeper will require **Privacy &
-Security → Open Anyway** for the installer and may require it again for the
-app.
-
-Download both release assets and verify before mounting:
+The recommended `v0.2.0` arm64 DMG and ZIP are signed with a Developer ID
+Application certificate, notarized by Apple, stapled, and accepted by
+Gatekeeper. Download the DMG and its adjacent checksum:
 
 ```sh
-shasum -a 256 -c EnvLatch-0.2.0-macos-arm64-unsigned.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.0-macos-arm64.dmg.sha256
 ```
 
-The DMG contains `Install EnvLatch.command`, which transactionally installs the
-app under `~/Applications`, the CLI under `~/.local/bin`, and the shared skill
-under `~/.agents/skills`. Only use Open Anyway for a checksum-verified asset
-downloaded from the official EnvLatch release.
+The DMG contains `EnvLatch.app`, `Install EnvLatch.command`, a release notice,
+and the MIT license. The installer transactionally installs the app under
+`~/Applications`, the CLI under `~/.local/bin`, and the shared skill under
+`~/.agents/skills`.
 
-### Notarized release
+When upgrading from an older ad-hoc-signed build, the first read of each
+existing Keychain item may ask for the login password because that item's
+access list trusts the old executable identity. Enter it and choose **Always
+Allow** once per item. Choosing **Allow** authorizes only that read and will
+prompt again. New items saved by the Developer ID build and later releases
+signed with the same identity should not require per-launch authorization.
 
-No friction-free downloadable binary is claimed until it has been Developer ID
-signed, notarized by Apple, stapled, and assessed by Gatekeeper. A maintainer
-with those credentials can prepare one with:
+Touch ID-protected Keychain items use a different access-control contract that
+requires user presence when a value is read. EnvLatch does not enable that
+contract by default because it would prevent unattended agent, test, and
+backend launches.
+
+Maintainers can reproduce the signed artifacts with:
 
 ```sh
 ENVLATCH_CODESIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
@@ -252,9 +256,9 @@ ENVLATCH_NOTARY_PROFILE="envlatch-notary" \
 ./scripts/package-release.sh
 ```
 
-The script emits a notarized zip and SHA-256 checksum under `dist/`. The
-unsigned DMG and source install remain preview distribution paths until that
-receipt exists.
+The script emits signed and notarized ZIP and DMG artifacts, adjacent SHA-256
+checksums, and Apple notary logs under `dist/`. The explicitly named unsigned
+DMG remains on the release only as a legacy preview.
 
 ## License
 

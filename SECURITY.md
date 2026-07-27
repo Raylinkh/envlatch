@@ -53,8 +53,16 @@ Keychain access-control lists.
 
 Source installs are ad-hoc signed unless a signing identity is supplied.
 Rebuilding an ad-hoc-signed app can trigger a new Keychain authorization
-prompt. Downloadable binary releases must be Developer ID signed, notarized,
-and stapled before they are described as trusted downloads. An asset explicitly
-named and documented as an unsigned preview is not a trusted download: verify
-its SHA-256 checksum, expect Gatekeeper's Open Anyway flow, and add credentials
-only after installation from the verified artifact.
+prompt. The recommended v0.2.0 artifacts are Developer ID signed, notarized,
+stapled, and Gatekeeper-accepted. An asset explicitly named and documented as
+an unsigned preview is not a trusted download: verify its SHA-256 checksum,
+expect Gatekeeper's Open Anyway flow, and add credentials only after
+installation from the verified artifact.
+
+An existing item created by an older ad-hoc-signed build can prompt once when
+the Developer ID build first reads it. Enter the login password and choose
+**Always Allow** to update that item's trusted-application access list.
+Choosing **Allow** authorizes only one read and causes another prompt later.
+Touch ID access control is not a drop-in replacement: Apple's user-presence
+model gates item reads and therefore conflicts with unattended agent launches.
+Biometric-per-read remains outside the default v0.2 contract.

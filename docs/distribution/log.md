@@ -19,3 +19,9 @@
 - Proof: public macOS CI run `30238334541` passed; both release assets were
   downloaded back and the DMG matched SHA-256
   `65e864d68afbb5e716d40772b027d0e480778cfd40cebf8f857054a8ddd8874b`
+- Prepared signed and notarized v0.2.0 arm64 ZIP and DMG:
+  - ZIP notarization `59bd69de-17a7-4d37-af46-f252724d8f20`
+  - DMG notarization `36fdad12-d1c9-4d8c-ab85-8c13dcb018bf`
+  - both notary logs report `Accepted`, status code `0`, and no issues
+  - stapler, Gatekeeper, mounted payload, isolated install, and rollback checks
+    passed locally

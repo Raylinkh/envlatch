@@ -6,13 +6,13 @@ Code candidate: `9204fda08b011582dd94dbfa041e3167a35d0fd3`
 
 ## Release verdict
 
-**READY FOR PUBLIC SOURCE AND AN EXPLICITLY UNSIGNED PREVIEW**
+**READY FOR A SIGNED AND NOTARIZED PUBLIC BINARY**
 
 The committed source, release build, repeated saved-key launch, create-only
-CLI key groups, installed canonical skill, Keychain behavior, and unsigned
-arm64 DMG have candidate-specific behavioral receipts. The DMG remains an
-ad-hoc-signed preview, not a Developer ID signed or notarized distribution.
-Gatekeeper rejects it until the user chooses **Open Anyway**.
+CLI key groups, installed canonical skill, Keychain behavior, signed arm64 ZIP
+and DMG, and legacy unsigned preview have candidate-specific behavioral
+receipts. Apple accepted both signed submissions, the tickets are stapled, and
+Gatekeeper accepts the app and DMG as Notarized Developer ID.
 
 ## RED to GREEN
 
@@ -225,6 +225,56 @@ The verifier compares mounted app and installer inputs with the assembled
 candidate, installs into an isolated root, verifies CLI/skill links and v0.2
 help/skill content, injects an install failure, and confirms rollback.
 
+## Signed and notarized artifacts
+
+`scripts/package-release.sh` built the app with:
+
+```text
+Developer ID Application: Kehua Lin (XHV8GP8YNW)
+```
+
+Apple notarization accepted both submitted artifacts with status code `0` and
+no issues:
+
+```text
+zip_submission=59bd69de-17a7-4d37-af46-f252724d8f20
+dmg_submission=36fdad12-d1c9-4d8c-ab85-8c13dcb018bf
+zip_status=Accepted
+dmg_status=Accepted
+issues=null
+```
+
+The final distributable artifacts, created after stapling the app and DMG, are:
+
+```text
+EnvLatch-0.2.0-macos-arm64.zip
+sha256=d2c19d3d06021a0051ae27fd624f77f4209760bd3925a2d912634a86aad7c3ba
+
+EnvLatch-0.2.0-macos-arm64.dmg
+sha256=85689589b01521af10f784e459a3241528d29c2057bbff156497113df08d6ccf
+```
+
+`scripts/verify-release.sh` passed:
+
+```text
+archive_checksum=passed
+dmg_checksum=passed
+dmg_payloads=4
+architecture=arm64
+signature=Developer ID Application
+notarization=stapled
+gatekeeper=accepted
+isolated_install=passed
+induced_failure_rollback=passed
+exit=0
+```
+
+The verifier checks the ZIP app, DMG, mounted app, and isolated installed app;
+confirms checksums and Developer ID signatures; validates stapled tickets and
+Gatekeeper acceptance; compares the four mounted payloads to their source
+inputs; validates the installed CLI and agent-skill links; and proves failed
+installation rollback.
+
 ## Security and repository hygiene
 
 EnvLatch has no reveal, clipboard, export, `eval`, or `.env` command.
@@ -255,14 +305,16 @@ digest matched
 
 ## Known boundaries
 
-- `spctl --assess --type execute` rejects the candidate (exit 3) because it is
-  ad-hoc signed.
-- This Mac has no valid Developer ID Application identity and no notarization
-  profile. The unsigned DMG requires **Privacy & Security → Open Anyway**.
 - Replacing an ad-hoc-signed executable can change its Keychain identity and
-  cause one authorization prompt per existing key. The unchanged installed
-  v0.2 executable read the same two selected items again without another prompt.
-  Developer ID signing is the durable upgrade-stable fix.
+  cause one authorization prompt per existing key. Entering the login password
+  and choosing **Always Allow** updates that item's access list; choosing
+  **Allow** authorizes only one read. Future releases must retain the same
+  Developer ID identity.
+- Touch ID user-presence access control would gate Keychain reads and prevent
+  unattended agent launches, so biometric-per-read is not the default v0.2
+  contract.
+- The old explicitly named unsigned DMG remains a legacy preview and still
+  requires **Privacy & Security → Open Anyway**.
 - EnvLatch injects environment variables; it is not an egress proxy or
   sandbox. The launched process and descendants can read selected values.
 - The caller's inherited environment is preserved. Unselected EnvLatch items

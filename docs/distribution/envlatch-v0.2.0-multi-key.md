@@ -1,7 +1,7 @@
 # EnvLatch v0.2.0 distribution copy
 
-Status: GitHub v0.2.0 prerelease published; outbound community posting remains
-unpublished.
+Status: GitHub v0.2.0 signed release prepared; outbound community posting
+remains unpublished.
 
 ## Short announcement
 
@@ -30,9 +30,9 @@ never replaces an existing group, and rejects missing keys or conflicting
 endpoint bindings before writing metadata. Pairing remains optional setup
 status—not authorization.
 
-Source and unsigned macOS preview:
+Source and signed, notarized macOS download:
 
 https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
 
-The preview is ad-hoc signed and not notarized. Verify its SHA-256 checksum and
-expect macOS Privacy & Security → Open Anyway.
+The recommended arm64 DMG and ZIP are Developer ID signed, Apple-notarized,
+stapled, and Gatekeeper-accepted. Adjacent SHA-256 checksum files are included.

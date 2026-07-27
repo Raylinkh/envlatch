@@ -195,25 +195,27 @@ GitHub Actions 会运行测试、校验脚本和 Bundle 元数据、构建 App�
 
 ## 二进制发布
 
-### 未签名预览版
+### 已签名并公证的发行版
 
-GitHub `v0.2.0` Prerelease 包含明确标注的 ad-hoc 签名 arm64 DMG 和相邻的 SHA-256
-Checksum。它是方便测试的构建，不是 Apple 验证的发行版。Gatekeeper 会要求在
-**隐私与安全性 → 仍要打开** 中允许 Installer，也可能再次要求允许 App。
-
-下载两个 Release Asset 后先验证：
+推荐下载 `v0.2.0` 的 arm64 DMG 或 ZIP。它们使用 Developer ID Application 证书签名，
+通过 Apple 公证并 Staple，且已通过 Gatekeeper 检查。下载 DMG 和相邻的 Checksum 后验证：
 
 ```sh
-shasum -a 256 -c EnvLatch-0.2.0-macos-arm64-unsigned.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.0-macos-arm64.dmg.sha256
 ```
 
-DMG 内的 `Install EnvLatch.command` 会事务式安装 App、CLI 和共享 Skill。只有当文件来自
-EnvLatch 官方 Release 且 Checksum 通过时，才使用“仍要打开”。
+DMG 内含 `EnvLatch.app`、`Install EnvLatch.command`、发行说明和 MIT License。安装器会
+事务式安装 App、CLI 和共享 Skill。
 
-### 已公证发行版
+如果从旧的 ad-hoc 签名版本升级，第一次读取每个已有钥匙串项目时，macOS 可能要求输入登录
+密码，因为该项目的访问列表仍信任旧的可执行文件身份。每个项目输入一次密码并选择
+**始终允许**；只选择**允许**只授权这一次，之后还会再次询问。由 Developer ID 版本新建的
+项目，以及使用同一签名身份的后续版本，正常情况下不需要每次启动都授权。
 
-在完成 Developer ID 签名、Apple 公证、Staple，并通过 Gatekeeper 评估前，项目不会宣称有
-“无摩擦”的可信二进制。具备这些凭证的维护者可以运行：
+Touch ID 保护的钥匙串项目属于另一种访问控制：读取值时需要用户在场。EnvLatch 默认不启用，
+因为它会阻止 Agent、测试和后端的无人值守启动。
+
+维护者可以用下面的命令复现签名产物：
 
 ```sh
 ENVLATCH_CODESIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
@@ -221,8 +223,8 @@ ENVLATCH_NOTARY_PROFILE="envlatch-notary" \
 ./scripts/package-release.sh
 ```
 
-脚本会在 `dist/` 下生成已公证的 Zip 和 SHA-256 Checksum。在该证据存在前，未签名 DMG 和
-源码安装仍是预览分发路径。
+脚本会在 `dist/` 下生成已签名并公证的 ZIP、DMG、相邻的 SHA-256 Checksum 和 Apple
+公证日志。明确标记为 unsigned 的 DMG 只作为旧预览保留。
 
 ## License
 
