@@ -16,6 +16,7 @@ let package = Package(
         .executableTarget(
             name: "EnvLatch",
             dependencies: ["EnvLatchCore"],
+            resources: [.process("Resources")],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("Security"),

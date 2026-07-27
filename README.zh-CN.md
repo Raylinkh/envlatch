@@ -47,6 +47,10 @@ EnvLatch SDK、不需要 Provider 专用命令、不需要代理，也不需要�
 - **原生、本地。** 值保存在 macOS 默认钥匙串的非同步项目中；没有服务器、账号、同步层或
   自制加密算法。
 
+![EnvLatch Provider 卡片式 Key Dashboard，包含 OpenAI、Anthropic、OpenRouter、GitHub 和可复用 Key Group](docs/assets/marketing/envlatch-main-demo.png)
+
+_这是使用虚构 Key 名称运行的真实 SwiftUI 界面；渲染这些卡片时不会读取 Secret Value。_
+
 ## 从源码安装
 
 要求：macOS 13 或更新版本，以及 Xcode 16 或 Swift 6 工具链。
@@ -73,7 +77,7 @@ open "$HOME/Applications/EnvLatch.app"
 
 ## 快速开始
 
-1. 打开 EnvLatch，选择 **Add Key**。
+1. 打开 EnvLatch，选择 **Add Key**，再选择 Provider 预设或 **Custom**。
 2. 保存一个像环境变量的名称，例如 `OPENAI_API_KEY`、`ANTHROPIC_API_KEY`、
    `GITHUB_TOKEN` 或 `AWS_SECRET_ACCESS_KEY`。
 3. 如果客户端通过兼容 API 访问自定义 Endpoint，启用 **Endpoint profile**，设置
@@ -229,3 +233,7 @@ ENVLATCH_NOTARY_PROFILE="envlatch-notary" \
 ## License
 
 [MIT](LICENSE)
+
+内置 Provider Logo 来自采用 MIT License 的
+[Lobe Icons](https://github.com/lobehub/lobe-icons)。Provider 名称及 Logo 的商标权归各自
+权利人所有。

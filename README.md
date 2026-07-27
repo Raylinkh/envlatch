@@ -51,6 +51,11 @@ provider-specific command, proxy, or code change is required.
 - **Native and local.** Values stay in the non-synchronizing macOS default
   Keychain. There is no server, account, sync layer, or custom cryptography.
 
+![EnvLatch provider-aware key dashboard with OpenAI, Anthropic, OpenRouter, GitHub, and a reusable key group](docs/assets/marketing/envlatch-main-demo.png)
+
+_The real SwiftUI dashboard with synthetic key names. Secret values are never
+loaded to render these cards._
+
 ## Install from source
 
 Requirements: macOS 13 or newer and Xcode 16 or a Swift 6 toolchain.
@@ -79,7 +84,7 @@ boundary.
 
 ## Quick start
 
-1. Open EnvLatch and choose **Add Key**.
+1. Open EnvLatch, choose **Add Key**, then pick a provider preset or **Custom**.
 2. Save a credential-shaped environment name such as `OPENAI_API_KEY`,
    `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, or `AWS_SECRET_ACCESS_KEY`.
 3. If a client uses a compatible API at a custom endpoint, enable **Endpoint
@@ -263,3 +268,7 @@ DMG remains on the release only as a legacy preview.
 ## License
 
 [MIT](LICENSE)
+
+Bundled provider logo assets come from
+[Lobe Icons](https://github.com/lobehub/lobe-icons) under its MIT license.
+Provider names and logos remain trademarks of their respective owners.

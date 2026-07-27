@@ -31,3 +31,14 @@
   release verifier successfully.
 - Promoted v0.2.0 from prerelease to the stable latest GitHub release:
   https://github.com/Raylinkh/envlatch/releases/tag/v0.2.0
+
+## 2026-07-28
+
+- Prepared a public README refresh around the real provider-aware SwiftUI
+  dashboard rather than a decorative mockup.
+- Captured the app from a DEBUG-only isolated synthetic vault containing
+  OpenAI, Anthropic, OpenRouter, GitHub, and one reusable two-key group.
+- Embedded the sanitized capture in both English and Chinese READMEs.
+- Bundled pinned real provider logos locally; EnvLatch still makes no provider
+  or CDN request at runtime.
+- Outbound response: pending after the source update reaches GitHub.

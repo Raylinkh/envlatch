@@ -19,10 +19,18 @@ struct EnvLatchGUI: App {
 
     var body: some Scene {
         WindowGroup("EnvLatch") {
+#if DEBUG
+            if ProcessInfo.processInfo.environment["ENVLATCH_PREVIEW_DATA"] == "1" {
+                VaultView(model: PreviewData.model)
+            } else {
+                VaultView()
+            }
+#else
             VaultView()
+#endif
         }
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 720, height: 600)
+        .defaultSize(width: 880, height: 700)
         .commands {
             CommandGroup(replacing: .newItem) {}
         }

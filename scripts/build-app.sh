@@ -20,6 +20,7 @@ install -m 644 "$project_root/Resources/Info.plist" "$stage_app/Contents/Info.pl
 install -m 644 "$project_root/Resources/AppIcon.icns" "$stage_app/Contents/Resources/AppIcon.icns"
 install -m 755 "$project_root/scripts/pair-agents.sh" "$stage_app/Contents/Resources/pair-agents.sh"
 ditto "$project_root/AgentSkill/envlatch" "$stage_app/Contents/Resources/envlatch-skill"
+ditto "$project_root/Sources/EnvLatch/Resources/ProviderIcons" "$stage_app/Contents/Resources/ProviderIcons"
 
 if [[ "$signing_identity" == "-" ]]; then
   codesign --force --sign - --timestamp=none "$stage_app"

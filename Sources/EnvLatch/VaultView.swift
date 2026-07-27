@@ -3,28 +3,42 @@ import AppKit
 import SwiftUI
 
 struct VaultView: View {
-    @StateObject private var model = VaultViewModel()
+    @StateObject private var model: VaultViewModel
     @State private var editor: KeyEditorState?
     @State private var pendingDeletion: CredentialName?
     @State private var launchProfileEditor: LaunchProfileEditorState?
     @State private var pendingLaunchProfileDeletion: LaunchProfile?
-    @State private var keyGroupsExpanded = false
     @State private var copiedCommand: String?
-    @State private var setupExpanded = true
+    @State private var setupExpanded = false
     @State private var pairedHosts: [PairedHost] = []
     @State private var pairingError: String?
+    @State private var searchText = ""
 
     private let inspector = InstallationInspector.current()
+    private let keyColumns = [
+        GridItem(.adaptive(minimum: 290, maximum: 430), spacing: 12),
+    ]
+
+    init(model: VaultViewModel? = nil) {
+        _model = StateObject(wrappedValue: model ?? VaultViewModel())
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
-            keyContent
-            Divider()
-            launchSection
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    keyContent
+                    if model.showsKeyGroups {
+                        keyGroupSection
+                    }
+                    launchSection
+                }
+                .padding(20)
+            }
         }
-        .frame(minWidth: 680, minHeight: 640)
+        .frame(minWidth: 760, minHeight: 620)
         .background(Color(nsColor: .windowBackgroundColor))
         .sheet(item: $editor) { state in
             KeyEditorSheet(
@@ -94,33 +108,72 @@ struct VaultView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "key.horizontal.fill")
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
+        VStack(spacing: 14) {
+            HStack(spacing: 14) {
+                Image(systemName: "key.horizontal.fill")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("EnvLatch")
-                    .font(.title2.weight(.semibold))
-                Text("API keys in macOS Keychain, released only when you launch a command.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("EnvLatch")
+                        .font(.title2.weight(.semibold))
+                    Text("One Keychain for every local agent")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button {
+                    editor = KeyEditorState(existingName: nil, profile: nil)
+                } label: {
+                    Label("Add Key", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(nsColor: .controlAccentColor))
+                .keyboardShortcut("n", modifiers: .command)
+                .accessibilityHint("Opens a secure form for a new credential")
             }
 
-            Spacer()
+            HStack(spacing: 8) {
+                StatusChip(
+                    text: "\(model.names.count) \(model.names.count == 1 ? "key" : "keys")",
+                    systemImage: "key.fill"
+                )
+                StatusChip(
+                    text: "\(model.launchProfiles.count) \(model.launchProfiles.count == 1 ? "group" : "groups")",
+                    systemImage: "square.stack.3d.up.fill"
+                )
+                StatusChip(
+                    text: pairingStatus == .paired ? "Agent setup ready" : "Setup needs repair",
+                    systemImage: pairingStatus == .paired
+                        ? "checkmark.shield.fill"
+                        : "exclamationmark.shield.fill",
+                    color: pairingStatus == .paired ? .green : .orange
+                )
 
-            Button {
-                editor = KeyEditorState(existingName: nil, profile: nil)
-            } label: {
-                Label("Add Key", systemImage: "plus")
+                Spacer()
+
+                HStack(spacing: 7) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                    TextField("Search keys", text: $searchText)
+                        .textFieldStyle(.plain)
+                }
+                .padding(.horizontal, 10)
+                .frame(width: 220, height: 28)
+                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 7))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 7)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                }
+                .accessibilityElement(children: .contain)
             }
-            .buttonStyle(.borderedProminent)
-            .keyboardShortcut("n", modifiers: .command)
-            .accessibilityHint("Opens a secure form for a new credential")
         }
         .padding(.horizontal, 22)
-        .padding(.vertical, 18)
+        .padding(.vertical, 16)
     }
 
     @ViewBuilder
@@ -131,16 +184,22 @@ struct VaultView: View {
                 Text("Reading Keychain…")
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 280)
         } else if model.names.isEmpty {
             VStack(spacing: 12) {
-                Image(systemName: "lock.shield")
-                    .font(.system(size: 34, weight: .regular))
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-                Text("No agent keys saved")
-                    .font(.headline)
-                Text("Add an API key once. EnvLatch keeps the value out of project files and terminal history.")
+                ProviderMark(
+                    presentation: ProviderPresentation(
+                        name: "Keychain",
+                        iconAssetName: nil,
+                        usesOriginalIconColor: false,
+                        fallbackSymbolName: "lock.shield.fill",
+                        color: .accentColor
+                    ),
+                    size: 52
+                )
+                Text("Your Keychain is ready")
+                    .font(.title3.weight(.semibold))
+                Text("Add a provider key once, then launch any agent or backend with the normal environment variable it already expects.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 440)
@@ -150,69 +209,95 @@ struct VaultView: View {
                 .buttonStyle(.bordered)
             }
             .padding(32)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 300)
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
         } else {
-            List {
-                Section("Saved keys") {
-                    ForEach(model.names, id: \.rawValue) { name in
-                        KeyRow(
-                            name: name,
-                            profile: model.profile(for: name),
-                            onEdit: {
-                                editor = KeyEditorState(
-                                    existingName: name,
-                                    profile: model.profile(for: name)
-                                )
-                            },
-                            onDelete: { pendingDeletion = name }
-                        )
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(
+                    title: "Keys",
+                    detail: searchText.isEmpty
+                        ? "Values stay hidden in macOS Keychain"
+                        : "\(filteredNames.count) matching"
+                )
+
+                if filteredNames.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        Text("No matching keys")
+                            .font(.headline)
+                        Text("Try a provider, environment name, contract, or endpoint.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
                     }
-                }
-
-                if model.showsKeyGroups {
-                    Section {
-                        DisclosureGroup(isExpanded: $keyGroupsExpanded) {
-                            Text("Combine keys only when one command needs more than one.")
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-
-                            ForEach(model.launchProfiles) { profile in
-                                LaunchProfileRow(
-                                    profile: profile,
-                                    onEdit: {
-                                        launchProfileEditor = LaunchProfileEditorState(profile: profile)
-                                    },
-                                    onDelete: { pendingLaunchProfileDeletion = profile }
-                                )
-                            }
-
-                            Button {
-                                launchProfileEditor = LaunchProfileEditorState(profile: nil)
-                            } label: {
-                                Label("New Key Group", systemImage: "plus")
-                            }
-                            .buttonStyle(.bordered)
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityHint("Creates an optional named set of saved keys")
-                        } label: {
-                            HStack {
-                                Text("Key groups")
-                                Text("Optional")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                if !model.launchProfiles.isEmpty {
-                                    Text("\(model.launchProfiles.count)")
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
+                    .frame(maxWidth: .infinity, minHeight: 160)
+                    .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+                } else {
+                    LazyVGrid(columns: keyColumns, alignment: .leading, spacing: 12) {
+                        ForEach(filteredNames, id: \.rawValue) { name in
+                            KeyCard(
+                                name: name,
+                                profile: model.profile(for: name),
+                                onEdit: {
+                                    editor = KeyEditorState(
+                                        existingName: name,
+                                        profile: model.profile(for: name)
+                                    )
+                                },
+                                onDelete: { pendingDeletion = name }
+                            )
                         }
                     }
                 }
             }
-            .listStyle(.inset)
+            .accessibilityElement(children: .contain)
             .accessibilityLabel("Saved API keys")
+        }
+    }
+
+    private var keyGroupSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                SectionHeader(
+                    title: "Key groups",
+                    detail: "Reusable combinations for commands that need several keys"
+                )
+                Spacer()
+                Button {
+                    launchProfileEditor = LaunchProfileEditorState(profile: nil)
+                } label: {
+                    Label("New Group", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityHint("Creates an optional named set of saved keys")
+            }
+
+            if model.launchProfiles.isEmpty {
+                HStack(spacing: 12) {
+                    Image(systemName: "square.stack.3d.up")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    Text("Create a group when the same backend or agent repeatedly needs several keys.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+            } else {
+                LazyVGrid(columns: keyColumns, alignment: .leading, spacing: 12) {
+                    ForEach(model.launchProfiles) { profile in
+                        LaunchProfileCard(
+                            profile: profile,
+                            onEdit: {
+                                launchProfileEditor = LaunchProfileEditorState(profile: profile)
+                            },
+                            onDelete: { pendingLaunchProfileDeletion = profile }
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -220,7 +305,7 @@ struct VaultView: View {
         VStack(alignment: .leading, spacing: 13) {
             AgentSetupDisclosure(
                 isExpanded: $setupExpanded,
-                sharedStatus: inspector.pairingStatus(),
+                sharedStatus: pairingStatus,
                 pairedHosts: pairedHosts,
                 setupPrompt: inspector.setupPrompt,
                 copiedContent: $copiedCommand,
@@ -242,9 +327,31 @@ struct VaultView: View {
                     .accessibilityLabel(status)
             }
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 16)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.55))
+        .padding(16)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var filteredNames: [CredentialName] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return model.names }
+        return model.names.filter { name in
+            let profile = model.profile(for: name)
+            return [
+                name.rawValue,
+                profile?.providerName ?? "",
+                profile?.contract.displayName ?? "",
+                profile?.baseURL ?? "",
+            ].contains { $0.localizedCaseInsensitiveContains(query) }
+        }
+    }
+
+    private var pairingStatus: AgentPairingStatus {
+#if DEBUG
+        if ProcessInfo.processInfo.environment["ENVLATCH_PREVIEW_DATA"] == "1" {
+            return .paired
+        }
+#endif
+        return inspector.pairingStatus()
     }
 
     private func refreshPairingStatus() {
@@ -257,75 +364,175 @@ struct VaultView: View {
     }
 }
 
-private struct KeyRow: View {
+private struct StatusChip: View {
+    let text: String
+    let systemImage: String
+    var color: Color = .secondary
+
+    var body: some View {
+        Label(text, systemImage: systemImage)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(color)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.09), in: Capsule())
+    }
+}
+
+private struct SectionHeader: View {
+    let title: String
+    let detail: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.headline)
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct KeyCard: View {
     let name: CredentialName
     let profile: EndpointProfile?
     let onEdit: () -> Void
     let onDelete: () -> Void
+    @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "key.fill")
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name.rawValue)
-                    .font(.system(.body, design: .monospaced, weight: .medium))
-                if let profile {
-                    Text("\(profile.providerName) · \(profile.contract.displayName)")
-                        .font(.caption)
+        let presentation = ProviderPresentation.resolve(credential: name, endpoint: profile)
+
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                ProviderMark(presentation: presentation)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(presentation.name)
+                        .font(.callout.weight(.semibold))
+                    Text(name.rawValue)
+                        .font(.system(.caption, design: .monospaced, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Text(profile.baseURL)
-                        .font(.caption2.monospaced())
-                        .foregroundStyle(.tertiary)
                         .lineLimit(1)
-                } else {
-                    Text("Value hidden · No endpoint profile")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .truncationMode(.middle)
                 }
+
+                Spacer(minLength: 4)
+
+                Menu {
+                    Button("Edit", systemImage: "pencil", action: onEdit)
+                    Divider()
+                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .frame(width: 24, height: 24)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .accessibilityLabel("Actions for \(name.rawValue)")
             }
-            Spacer()
-            Button("Edit", action: onEdit)
-                .buttonStyle(.borderless)
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
+
+            if let profile {
+                HStack(spacing: 6) {
+                    Text(profile.contract.displayName)
+                    Text("·")
+                    Text(endpointHost(profile.baseURL))
+                        .lineLimit(1)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            } else {
+                Text("Direct environment variable")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Delete \(name.rawValue)")
+
+            HStack(spacing: 6) {
+                Image(systemName: "lock.fill")
+                Text("Value hidden in Keychain")
+                Spacer()
+                Button("Edit", action: onEdit)
+                    .buttonStyle(.link)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 6)
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 138, alignment: .topLeading)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    isHovering
+                        ? presentation.color.opacity(0.55)
+                        : Color(nsColor: .separatorColor),
+                    lineWidth: isHovering ? 1 : 0.5
+                )
+        }
+        .onHover { isHovering = $0 }
+        .animation(.easeOut(duration: 0.16), value: isHovering)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func endpointHost(_ value: String) -> String {
+        URL(string: value)?.host ?? value
     }
 }
 
-private struct LaunchProfileRow: View {
+private struct LaunchProfileCard: View {
     let profile: LaunchProfile
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "switch.2")
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "square.stack.3d.up.fill")
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+                    .frame(width: 34, height: 34)
+                    .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 9))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(profile.name)
+                        .font(.callout.weight(.semibold))
+                    Text("\(profile.credentialNames.count) \(profile.credentialNames.count == 1 ? "key" : "keys")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Menu {
+                    Button("Edit", systemImage: "pencil", action: onEdit)
+                    Divider()
+                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .frame(width: 24, height: 24)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .accessibilityLabel("Actions for key group \(profile.name)")
+            }
+
+            Text(profile.credentialNames.map(\.rawValue).joined(separator: "  ·  "))
+                .font(.system(.caption2, design: .monospaced))
                 .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(profile.name)
-                    .font(.body.weight(.medium))
-                Text(profile.credentialNames.map(\.rawValue).joined(separator: ", "))
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-            Spacer()
-            Button("Edit", action: onEdit)
-                .buttonStyle(.borderless)
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel("Delete key group \(profile.name)")
+                .lineLimit(2)
+
+            Button("Edit group", action: onEdit)
+                .buttonStyle(.link)
+                .font(.caption)
         }
-        .padding(.vertical, 6)
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+        }
     }
 }
 
@@ -559,11 +766,12 @@ private struct LaunchProfileEditorSheet: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color(nsColor: .controlAccentColor))
                 .keyboardShortcut(.defaultAction)
             }
         }
+        .frame(width: 472)
         .padding(24)
-        .frame(width: 520)
         .onAppear { nameFocused = existingProfile == nil }
     }
 
@@ -596,6 +804,7 @@ private struct KeyEditorSheet: View {
     @State private var contract: APIContract
     @State private var baseURL: String
     @State private var credentialEnvironmentName: String
+    @State private var selectedPresetID: String?
     @FocusState private var focusedField: Field?
 
     private enum Field {
@@ -620,6 +829,11 @@ private struct KeyEditorSheet: View {
             initialValue: existingProfile?.credentialEnvironmentName.rawValue
                 ?? APIContract.anthropic.defaultCredentialEnvironmentName
         )
+        _selectedPresetID = State(
+            initialValue: existingName.flatMap {
+                ProviderPreset.matching(credential: $0, endpoint: existingProfile)?.id
+            }
+        )
     }
 
     var body: some View {
@@ -630,6 +844,68 @@ private struct KeyEditorSheet: View {
                 Text("The secret stays in your default Keychain. Endpoint settings never contain its value.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            }
+
+            if existingName == nil {
+                VStack(alignment: .leading, spacing: 9) {
+                    Text("Start with a provider")
+                        .font(.callout.weight(.medium))
+                    Text("Pick a preset to fill the environment name, API contract, and base URL. Everything remains editable.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    LazyVGrid(
+                        columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3),
+                        spacing: 8
+                    ) {
+                        ForEach(ProviderPreset.catalog) { preset in
+                            ProviderPresetButton(
+                                preset: preset,
+                                isSelected: selectedPresetID == preset.id,
+                                action: { apply(preset) }
+                            )
+                        }
+
+                        Button {
+                            selectedPresetID = nil
+                            configureEndpoint = false
+                        } label: {
+                            HStack(spacing: 8) {
+                                ProviderMark(
+                                    presentation: ProviderPresentation(
+                                        name: "Custom",
+                                        iconAssetName: nil,
+                                        usesOriginalIconColor: false,
+                                        fallbackSymbolName: "slider.horizontal.3",
+                                        color: .secondary
+                                    ),
+                                    size: 30
+                                )
+                                Text("Custom")
+                                    .font(.callout.weight(.medium))
+                                Spacer(minLength: 0)
+                            }
+                            .padding(8)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                selectedPresetID == nil
+                                    ? Color.accentColor.opacity(0.09)
+                                    : Color(nsColor: .controlBackgroundColor),
+                                in: RoundedRectangle(cornerRadius: 9)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 9)
+                                    .stroke(
+                                        selectedPresetID == nil
+                                            ? Color.accentColor.opacity(0.7)
+                                            : Color(nsColor: .separatorColor),
+                                        lineWidth: selectedPresetID == nil ? 1 : 0.5
+                                    )
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 7) {
@@ -673,6 +949,11 @@ private struct KeyEditorSheet: View {
             VStack(alignment: .leading, spacing: 12) {
                 Toggle("Configure endpoint profile", isOn: $configureEndpoint)
                     .font(.callout.weight(.medium))
+                    .onChange(of: configureEndpoint) { isEnabled in
+                        if !isEnabled {
+                            selectedPresetID = nil
+                        }
+                    }
 
                 if configureEndpoint {
                     HStack(spacing: 12) {
@@ -750,11 +1031,12 @@ private struct KeyEditorSheet: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(Color(nsColor: .controlAccentColor))
                 .keyboardShortcut(.defaultAction)
             }
         }
+        .frame(width: 572)
         .padding(24)
-        .frame(width: 540)
         .onAppear {
             focusedField = existingName == nil ? .name : .value
         }
@@ -806,5 +1088,60 @@ private struct KeyEditorSheet: View {
             baseURL: baseURL,
             credentialEnvironmentName: CredentialName(validating: credentialEnvironmentName)
         )
+    }
+
+    private func apply(_ preset: ProviderPreset) {
+        selectedPresetID = preset.id
+        rawName = preset.suggestedCredentialName
+        configureEndpoint = true
+        providerName = preset.displayName
+        contract = preset.contract
+        baseURL = preset.baseURL
+        credentialEnvironmentName = preset.exposedCredentialName
+        focusedField = .value
+    }
+}
+
+private struct ProviderPresetButton: View {
+    let preset: ProviderPreset
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        let presentation = ProviderPresentation.presentation(for: preset)
+
+        Button(action: action) {
+            HStack(spacing: 8) {
+                ProviderMark(presentation: presentation, size: 30)
+                Text(preset.displayName)
+                    .font(.callout.weight(.medium))
+                Spacer(minLength: 0)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity)
+            .background(
+                isSelected
+                    ? presentation.color.opacity(0.09)
+                    : Color(nsColor: .controlBackgroundColor),
+                in: RoundedRectangle(cornerRadius: 9)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 9)
+                    .stroke(
+                        isSelected
+                            ? presentation.color.opacity(0.7)
+                            : Color(nsColor: .separatorColor),
+                        lineWidth: isSelected ? 1 : 0.5
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(preset.displayName) provider preset")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

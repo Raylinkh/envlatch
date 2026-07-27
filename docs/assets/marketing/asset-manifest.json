@@ -15,14 +15,14 @@
     },
     {
       "path": "envlatch-main-demo.png",
-      "intendedUse": "Sanitized fictional-data product screenshot embedded in public marketing graphics",
+      "intendedUse": "Sanitized real-app provider dashboard embedded in the English and Chinese GitHub READMEs",
       "status": "production-docs",
-      "width": 720,
-      "height": 672,
+      "width": 880,
+      "height": 700,
       "mode": "RGB",
       "hasTransparency": false,
-      "bytes": 59469,
-      "sha256": "6b75c63fe3e97ec9090a9de4344788a1676d5eff6a2c278d6ee40dea4ba639a2"
+      "bytes": 164114,
+      "sha256": "19696e6da131919a1c4291918bb1fb409c09d8c6c7c84390a369a6e48c411a92"
     },
     {
       "path": "xiaohongshu/01-cover-before-after.png",
