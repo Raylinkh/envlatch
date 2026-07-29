@@ -388,10 +388,10 @@ documented in `SPEC.md` and `SECURITY.md`.
 
 - repository: https://github.com/Raylinkh/envlatch
 - v0.1.0 historical unsigned prerelease: published
-- v0.2.1 tag source: `c24eccd5ef3cb913cf3423c2765c51d57f61a6e1`
-- CI: https://github.com/Raylinkh/envlatch/actions/runs/30300332620
+- v0.2.2 tag source: `11de3c4aca5af087fc02f53379ede4153c07f061`
+- CI: https://github.com/Raylinkh/envlatch/actions/runs/30422058632
   (`success`)
-- stable latest release: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.1
+- stable latest release: https://github.com/Raylinkh/envlatch/releases/tag/v0.2.2
 - recommended release assets: signed/notarized arm64 DMG and ZIP with adjacent
   SHA-256 checksums
 - legacy v0.2.0 release assets: explicitly named unsigned arm64 DMG and checksum
@@ -404,14 +404,31 @@ mounted payload comparison, isolated installation, and rollback. The remote
 artifacts were:
 
 ```text
-EnvLatch-0.2.1-macos-arm64.zip
-bytes=1683112
-sha256=da861c794ef56af0fe73b695fe8fbdb16ce52ac6809cc724edbbe9525016d08e
+EnvLatch-0.2.2-macos-arm64.zip
+bytes=1684585
+sha256=45568ece9cc45af67d94527485b258bc980d3d57251dcd9d25bb81c907853c87
 
-EnvLatch-0.2.1-macos-arm64.dmg
-bytes=2050855
-sha256=83eacdecaadf488c973ee786ed6ccfb9db2e1c69884e43f4f023eb223945c6f7
+EnvLatch-0.2.2-macos-arm64.dmg
+bytes=2053601
+sha256=49f0561e6f58aed1957aa7d096176e3f4a51503c302abec74797d811b63a6415
 ```
+
+The v0.2.2 runtime contradiction was also verified on the exact candidate:
+
+```text
+restricted process:
+saved_key_count=0
+saved_key_count_scope=current_process
+keychain_visibility_warning=sandboxed_zero_is_inconclusive
+exit=1
+
+normal macOS Keychain access:
+saved_key_count=4
+saved_key_count_scope=current_process
+exit=0
+```
+
+Neither doctor path requested secret data.
 
 ## Known boundaries
 

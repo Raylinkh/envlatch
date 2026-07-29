@@ -62,3 +62,24 @@
     the full release verifier.
 - Outbound response: GitHub README and release exposure only; no external
   community or social post yet.
+
+## 2026-07-29
+
+- Reproduced a host-sandbox contradiction: the same installed v0.2.1 CLI
+  reported `saved_key_count=0` in the restricted agent process and
+  `saved_key_count=4` with normal macOS Keychain access.
+- Published the stable v0.2.2 GitHub release:
+  https://github.com/Raylinkh/envlatch/releases/tag/v0.2.2
+- Distribution artifact: patch release notes plus signed/notarized arm64 ZIP
+  and DMG with adjacent SHA-256 checksums.
+- Proof:
+  - exact tag source `11de3c4aca5af087fc02f53379ede4153c07f061`;
+  - public CI run `30422058632` passed;
+  - Apple accepted ZIP submission `56b28a30-b222-41a7-ae08-e7e8a156b2d2`;
+  - Apple accepted DMG submission `8d43911d-5943-4678-831c-7def604a2855`;
+  - all four public assets were downloaded into a fresh directory and passed
+    the full release verifier.
+- Installed the downloaded public build locally. The installed CLI reports
+  v0.2.2, sees four saved keys with normal Keychain access, and reports
+  `cli_link=installed` and `agent_pairing=paired`.
+- External community launch remains pending Hacker News account sign-in.
