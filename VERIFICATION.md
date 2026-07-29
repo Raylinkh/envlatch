@@ -430,6 +430,19 @@ exit=0
 
 Neither doctor path requested secret data.
 
+The freshly downloaded public build was installed locally. One saved key was
+then selected through the normal macOS approval path and supplied to a
+no-output local child assertion:
+
+```text
+selected_key_launch=passed
+cli_link=installed
+agent_pairing=paired
+```
+
+The child checked only whether the selected environment variable was non-empty.
+No value was printed and no provider request was made.
+
 ## Known boundaries
 
 - Replacing an ad-hoc-signed executable can change its Keychain identity and

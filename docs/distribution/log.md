@@ -82,4 +82,7 @@
 - Installed the downloaded public build locally. The installed CLI reports
   v0.2.2, sees four saved keys with normal Keychain access, and reports
   `cli_link=installed` and `agent_pairing=paired`.
+- A least-privilege launch selected one saved key and passed a no-output local
+  child assertion that its environment variable was present. No value was
+  printed and no provider request was made.
 - External community launch remains pending Hacker News account sign-in.
