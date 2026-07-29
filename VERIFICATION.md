@@ -468,3 +468,22 @@ No value was printed and no provider request was made.
 Any change to Keychain queries, saved-key/group resolution, environment
 construction, execution, signing, bundle layout, installer migration, or
 release packaging invalidates the corresponding receipt above.
+
+# v0.3.0 source candidate — 2026-07-29
+
+The Simplified Chinese GUI source candidate is public but is not yet a signed
+binary release.
+
+- Exact source: `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
+- Public CI: `30428180335` — success
+- Local assembled proof: 65 tests in 16 suites passed; the release-mode app
+  reported `EnvLatch 0.3.0`, carried
+  `Contents/Resources/zh-Hans.lproj/Localizable.strings`, passed strict
+  code-signature verification, and preserved English CLI output.
+- Localization proof: every GUI key has a Simplified Chinese catalog entry,
+  the checked runtime mirror matches the catalog, and critical static,
+  interpolated, count, status, and validation messages resolve in both
+  locales.
+- Pending boundary: real English and Simplified Chinese window inspection,
+  Developer ID signing, notarization, public release assets, and public-asset
+  re-download verification.

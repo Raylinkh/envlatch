@@ -65,6 +65,14 @@
 
 ## 2026-07-29
 
+- Published the bilingual GitHub product page and v0.3.0 source candidate to
+  public `main` at `77478bc74e73ec82940ead6c96e9be41ecee5c9e`.
+- Distribution artifact: English and Simplified Chinese README copy now
+  explains native in-app language support, stable CLI terminology, and the
+  localized Chinese quick-start labels.
+- Public CI run `30428180335` passed the exact source candidate, including the
+  packaged `zh-Hans` resource assertion.
+- Response: pending; no signed v0.3.0 binary or external community post yet.
 - Reproduced a host-sandbox contradiction: the same installed v0.2.1 CLI
   reported `saved_key_count=0` in the restricted agent process and
   `saved_key_count=4` with normal macOS Keychain access.

@@ -4,8 +4,8 @@ Next release: v0.3.0
 Target: 2026-07-30
 Slice: Native English and Simplified Chinese GUI with unchanged CLI and agent
 contracts.
-Status: source implementation in progress; signed/notarized binary not yet
-published.
+Status: public source candidate `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
+passed CI run `30428180335`; signed/notarized binary not yet published.
 
 ## Current stable release
 
