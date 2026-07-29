@@ -162,6 +162,12 @@ envlatch version
 envlatch help
 ```
 
+`doctor` 的 `saved_key_count` 只代表当前进程可见的 Key。Host 沙箱可能隐藏钥匙串
+项目，让已有 Key 的 Vault 看起来是空的。EnvLatch 检测到沙箱中的零值时，会以非零状态
+退出，并输出 `keychain_visibility_warning=sandboxed_zero_is_inconclusive`。请通过
+Host 的正常授权路径，用 macOS 钥匙串权限重新运行完整的 EnvLatch 命令；不要因为这个零值
+重新创建 Key。
+
 `envlatch run -- <command>` 是显式兼容模式，会把所有已保存的 Key 暴露给目标进程。优先使用
 `run --using`。
 
@@ -201,11 +207,11 @@ GitHub Actions 会运行测试、校验脚本和 Bundle 元数据、构建 App�
 
 ### 已签名并公证的发行版
 
-推荐下载 `v0.2.1` 的 arm64 DMG 或 ZIP。它们使用 Developer ID Application 证书签名，
+推荐下载 `v0.2.2` 的 arm64 DMG 或 ZIP。它们使用 Developer ID Application 证书签名，
 通过 Apple 公证并 Staple，且已通过 Gatekeeper 检查。下载 DMG 和相邻的 Checksum 后验证：
 
 ```sh
-shasum -a 256 -c EnvLatch-0.2.1-macos-arm64.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.2-macos-arm64.dmg.sha256
 ```
 
 DMG 内含 `EnvLatch.app`、`Install EnvLatch.command`、发行说明和 MIT License。安装器会

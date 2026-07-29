@@ -34,7 +34,7 @@ jobs:
           ./scripts/build-app.sh
           codesign --verify --deep --strict dist/EnvLatch.app
           test -f dist/EnvLatch.app/Contents/Resources/AppIcon.icns
-          test "$(dist/EnvLatch.app/Contents/MacOS/EnvLatch --version)" = "EnvLatch 0.2.1"
+          test "$(dist/EnvLatch.app/Contents/MacOS/EnvLatch --version)" = "EnvLatch 0.2.2"
 
       - name: Package unsigned preview
         run: |

@@ -179,6 +179,13 @@ envlatch version
 envlatch help
 ```
 
+`doctor` reports `saved_key_count` for the current process only. A host sandbox
+can hide Keychain items and make a populated vault look empty. When EnvLatch
+detects a sandboxed zero, it exits nonzero with
+`keychain_visibility_warning=sandboxed_zero_is_inconclusive`. Re-run the whole
+EnvLatch command through the host's normal approval path with macOS Keychain
+access; do not recreate keys based on that zero.
+
 `envlatch run -- <command>` remains an explicit compatibility mode that exposes
 every saved key to the launched process. Prefer `run --using`.
 
@@ -228,12 +235,12 @@ builds the app, and verifies its structural code signature.
 
 ### Signed and notarized release
 
-The recommended `v0.2.1` arm64 DMG and ZIP are signed with a Developer ID
+The recommended `v0.2.2` arm64 DMG and ZIP are signed with a Developer ID
 Application certificate, notarized by Apple, stapled, and accepted by
 Gatekeeper. Download the DMG and its adjacent checksum:
 
 ```sh
-shasum -a 256 -c EnvLatch-0.2.1-macos-arm64.dmg.sha256
+shasum -a 256 -c EnvLatch-0.2.2-macos-arm64.dmg.sha256
 ```
 
 The DMG contains `EnvLatch.app`, `Install EnvLatch.command`, a release notice,

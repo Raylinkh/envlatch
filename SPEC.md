@@ -92,6 +92,7 @@ Dependency direction is `GUI/CLI -> Core -> Security/Darwin`. Keychain queries h
 | Delete cancel/failure | Row remains | Cancel or retry | Existing item |
 | Missing `--` or command | CLI usage and nonzero exit | Correct command | Keychain untouched |
 | Empty vault at `run` | CLI refuses to launch without a saved credential | Add a key in the GUI | Keychain remains empty |
+| Sandboxed zero-key query | `doctor` labels the count as current-process visibility, emits `keychain_visibility_warning=sandboxed_zero_is_inconclusive`, and exits nonzero | Re-run the complete EnvLatch command through the host's normal macOS Keychain approval path | Existing Keychain items remain untouched; no secret value is read |
 | Path resolution / `execve` failure | Program name and OS error, never environment | Correct inherited PATH/name or executable | Keychain untouched |
 | Missing/stale pairing | GUI and doctor report shared setup state; prompt gives `envlatch pair <name>` | Run pairing again | Keychain untouched; replaced paths are backed up |
 | Unknown, ambiguous, incomplete, or conflicting key/group selection | CLI names the missing or conflicting key, group, member, or environment binding and points to `list`/`groups` | Select, rename, or edit one key/group | Keychain untouched and no secret read attempted |

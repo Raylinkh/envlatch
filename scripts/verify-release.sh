@@ -103,6 +103,9 @@ grep -Fq \
 grep -Fq \
   'envlatch groups create "<group-name>"' \
   "$canonical_skill/SKILL.md"
+grep -Fq \
+  'keychain_visibility_warning=sandboxed_zero_is_inconclusive' \
+  "$canonical_skill/SKILL.md"
 for skill_link in \
   "$success_root/user/.codex/skills/envlatch" \
   "$success_root/user/.claude/skills/envlatch" \

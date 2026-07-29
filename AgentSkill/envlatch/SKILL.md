@@ -17,14 +17,16 @@ envlatch groups create "<group-name>" --using <saved-key-name> --using <saved-ke
 ## Workflow
 
 1. Run `envlatch doctor`.
-2. Optionally register this agent or host for setup status: choose a short descriptive name and run `envlatch pair "<agent-or-host-name>"`. Pairing is not authorization and is not restricted to a built-in host list.
-3. Run `envlatch help` before first use so the installed CLI remains the source of truth.
-4. Run `envlatch list`. This returns saved environment-variable names only. Use the exact saved key name directly when the command needs one key.
-5. If the command needs several saved keys once, repeat `--using` with each exact saved key name. Repeated selectors accept saved keys only; a named key group must be used by itself.
-6. If the same combination will be reused, run `envlatch groups create "<group-name>" --using <saved-key> --using <saved-key>`. This stores names only and never reads values. Run `envlatch groups` to inspect non-secret membership and per-key endpoint metadata.
-7. Preserve the user's exact program and arguments. EnvLatch validates the complete selection before reading secrets, then loads only its selected Keychain items and applies each key's client binding.
-8. If a required saved key is missing, ask the user to add or rotate it in the EnvLatch GUI. Do not silently fall back to broad `envlatch run --`; it exposes every saved key and is only for explicit user-authorized compatibility use.
-9. If the command is already running without its key or endpoint metadata, restart it through the wrapper; environment variables cannot be added safely to an existing process.
+2. Treat `saved_key_count` as visible to the current process only. If the user expects saved keys and the count is zero, do not conclude that the vault is empty. When doctor exits nonzero with `keychain_visibility_warning=sandboxed_zero_is_inconclusive`, re-run EnvLatch through the host's normal approval path with macOS Keychain access. Do not ask the user to recreate keys or inspect another store based on a sandboxed zero.
+3. Run the eventual `envlatch run ...` command through that same normal Keychain-access path. EnvLatch cannot bypass a host sandbox, and running the child outside the wrapper will not receive the selected variables.
+4. Optionally register this agent or host for setup status: choose a short descriptive name and run `envlatch pair "<agent-or-host-name>"`. Pairing is not authorization and is not restricted to a built-in host list.
+5. Run `envlatch help` before first use so the installed CLI remains the source of truth.
+6. Run `envlatch list`. This returns saved environment-variable names only. Use the exact saved key name directly when the command needs one key.
+7. If the command needs several saved keys once, repeat `--using` with each exact saved key name. Repeated selectors accept saved keys only; a named key group must be used by itself.
+8. If the same combination will be reused, run `envlatch groups create "<group-name>" --using <saved-key> --using <saved-key>`. This stores names only and never reads values. Run `envlatch groups` to inspect non-secret membership and per-key endpoint metadata.
+9. Preserve the user's exact program and arguments. EnvLatch validates the complete selection before reading secrets, then loads only its selected Keychain items and applies each key's client binding.
+10. If a required saved key is missing after a normal-Keychain-access check, ask the user to add or rotate it in the EnvLatch GUI. Do not silently fall back to broad `envlatch run --`; it exposes every saved key and is only for explicit user-authorized compatibility use.
+11. If the command is already running without its key or endpoint metadata, restart it through the wrapper; environment variables cannot be added safely to an existing process.
 
 ## Secret handling
 

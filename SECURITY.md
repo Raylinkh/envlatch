@@ -53,7 +53,7 @@ Keychain access-control lists.
 
 Source installs are ad-hoc signed unless a signing identity is supplied.
 Rebuilding an ad-hoc-signed app can trigger a new Keychain authorization
-prompt. The recommended v0.2.1 artifacts are Developer ID signed, notarized,
+prompt. The recommended v0.2.2 artifacts are Developer ID signed, notarized,
 stapled, and Gatekeeper-accepted. An asset explicitly named and documented as
 an unsigned preview is not a trusted download: verify its SHA-256 checksum,
 expect Gatekeeper's Open Anyway flow, and add credentials only after

@@ -119,6 +119,7 @@ public struct InstallationInspector: Sendable {
         1. Optionally register a short display name for setup status (this is not authorization):
            \(pairCommand)
         2. Run `envlatch doctor` and confirm `agent_pairing=paired`.
+           `saved_key_count` is current-process visibility only. If the user expects saved keys and the count is zero, do not conclude that the vault is empty. When doctor exits nonzero with `keychain_visibility_warning=sandboxed_zero_is_inconclusive`, re-run doctor—and the eventual `envlatch run ...` command—through the host's normal approval path with normal macOS Keychain access. Do not ask the user to recreate keys based on a sandboxed zero.
         3. Run `envlatch help` and follow its usage.
         4. Run `envlatch list` to see saved key names. Any saved key works directly with `--using`.
         5. If one command needs several saved keys once, repeat `--using` with exact saved key names:

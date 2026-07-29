@@ -70,6 +70,12 @@ public struct CLIApplication {
                 stdout("platform=macOS")
                 stdout("keychain_attribute_query=reachable")
                 stdout("saved_key_count=\(names.count)")
+                stdout("saved_key_count_scope=current_process")
+                let sandboxedZeroIsInconclusive =
+                    names.isEmpty && isKnownSandboxedExecution
+                if sandboxedZeroIsInconclusive {
+                    stdout("keychain_visibility_warning=sandboxed_zero_is_inconclusive")
+                }
                 stdout("candidate_requirement=\(identity)")
                 stdout("cli_link=\(linkStatusDescription(inspector.linkStatus()))")
                 stdout("agent_pairing=\(pairingStatusDescription(inspector.pairingStatus()))")
@@ -78,6 +84,14 @@ public struct CLIApplication {
                 stdout("endpoint_profile_count=\(profiles.count)")
                 stdout("launch_profile_count=\(launchProfiles.count)")
                 stdout("pair_command=\(inspector.pairCommand)")
+                guard !sandboxedZeroIsInconclusive else {
+                    stderr(
+                        "error: EnvLatch cannot confirm an empty vault from this sandboxed process. " +
+                        "Re-run this EnvLatch command with normal macOS Keychain access; " +
+                        "do not conclude that no keys are saved."
+                    )
+                    return 1
+                }
                 guard !identity.hasPrefix("unavailable:") else {
                     stderr("error: EnvLatch could not read its code identity.")
                     return 1
@@ -208,6 +222,22 @@ public struct CLIApplication {
     private struct BindingPlan {
         let bindings: [SecretBinding]
         let configuration: [String: String]
+    }
+
+    private var isKnownSandboxedExecution: Bool {
+        [
+            "APP_SANDBOX_CONTAINER_ID",
+            "CODEX_SANDBOX",
+            "SANDBOXED",
+        ].contains { name in
+            guard let value = environment[name]?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+            else {
+                return false
+            }
+            return !value.isEmpty && !["0", "false", "no"].contains(value)
+        }
     }
 
     private func createGroup(

@@ -18,7 +18,7 @@ struct CLIApplicationTests {
         )
 
         #expect(application.run(arguments: ["--version"]) == 0)
-        #expect(output == ["EnvLatch 0.2.1"])
+        #expect(output == ["EnvLatch 0.2.2"])
         #expect(store.loadAllCallCount == 0)
     }
 
@@ -54,6 +54,71 @@ struct CLIApplicationTests {
         #expect(store.loadAllCallCount == 0)
         #expect(output.contains("OPENAI_API_KEY"))
         #expect(output.allSatisfy { !$0.contains("must-not-be-read") })
+    }
+
+    @Test func doctorRejectsSandboxedZeroCountAsInconclusive() {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-doctor-sandbox-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = RecordingSecretStore(names: [], values: [:])
+        var output: [String] = []
+        var errors: [String] = []
+        let application = CLIApplication(
+            store: store,
+            environment: [
+                "PATH": "/usr/bin:/bin",
+                "CODEX_SANDBOX": "seatbelt",
+            ],
+            inspector: InstallationInspector(
+                executableURL: URL(fileURLWithPath: "/Applications/EnvLatch.app/Contents/MacOS/EnvLatch"),
+                linkURL: URL(fileURLWithPath: "/tmp/missing-envlatch")
+            ),
+            pairedHostStore: PairedHostStore(fileURL: root.appendingPathComponent("paired.json")),
+            endpointProfileStore: EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json")),
+            launchProfileStore: LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json")),
+            identityProvider: { "identifier test" },
+            stdout: { output.append($0) },
+            stderr: { errors.append($0) }
+        )
+
+        #expect(application.run(arguments: ["doctor"]) == 1)
+        #expect(output.contains("saved_key_count=0"))
+        #expect(output.contains("saved_key_count_scope=current_process"))
+        #expect(output.contains("keychain_visibility_warning=sandboxed_zero_is_inconclusive"))
+        #expect(errors.contains { $0.contains("normal macOS Keychain access") })
+        #expect(store.loadAllCallCount == 0)
+        #expect(store.loadedNames.isEmpty)
+    }
+
+    @Test func doctorAcceptsEmptyVaultOutsideKnownSandbox() {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("envlatch-doctor-empty-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = RecordingSecretStore(names: [], values: [:])
+        var output: [String] = []
+        var errors: [String] = []
+        let application = CLIApplication(
+            store: store,
+            environment: ["PATH": "/usr/bin:/bin"],
+            inspector: InstallationInspector(
+                executableURL: URL(fileURLWithPath: "/Applications/EnvLatch.app/Contents/MacOS/EnvLatch"),
+                linkURL: URL(fileURLWithPath: "/tmp/missing-envlatch")
+            ),
+            pairedHostStore: PairedHostStore(fileURL: root.appendingPathComponent("paired.json")),
+            endpointProfileStore: EndpointProfileStore(fileURL: root.appendingPathComponent("endpoints.json")),
+            launchProfileStore: LaunchProfileStore(fileURL: root.appendingPathComponent("groups.json")),
+            identityProvider: { "identifier test" },
+            stdout: { output.append($0) },
+            stderr: { errors.append($0) }
+        )
+
+        #expect(application.run(arguments: ["doctor"]) == 0)
+        #expect(output.contains("saved_key_count=0"))
+        #expect(output.contains("saved_key_count_scope=current_process"))
+        #expect(!output.contains("keychain_visibility_warning=sandboxed_zero_is_inconclusive"))
+        #expect(errors.isEmpty)
+        #expect(store.loadAllCallCount == 0)
+        #expect(store.loadedNames.isEmpty)
     }
 
     @Test func resolvesExecutableBeforeReadingCredentials() throws {

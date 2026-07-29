@@ -71,6 +71,8 @@ struct InstallationInspectorTests {
         let prompt = inspector.setupPrompt
         #expect(prompt.contains("envlatch pair \"<your agent or host name>\""))
         #expect(prompt.contains("envlatch doctor"))
+        #expect(prompt.contains("keychain_visibility_warning=sandboxed_zero_is_inconclusive"))
+        #expect(prompt.contains("normal macOS Keychain access"))
         #expect(prompt.contains("envlatch help"))
         #expect(prompt.contains("envlatch groups"))
         #expect(prompt.contains("Any saved key works directly with `--using`"))

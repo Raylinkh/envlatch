@@ -1,4 +1,4 @@
-# Show HN launch — EnvLatch v0.2.1
+# Show HN launch — EnvLatch v0.2.2
 
 ## Status
 
@@ -37,7 +37,7 @@ The security boundary is intentionally narrow: the launched process and its
 descendants can read the selected variables, so EnvLatch reduces `.env` sprawl
 and accidental copying but is not a sandbox or egress proxy.
 
-v0.2.1 is MIT-licensed and the arm64 DMG/ZIP is Developer ID signed, notarized,
+v0.2.2 is MIT-licensed and the arm64 DMG/ZIP is Developer ID signed, notarized,
 stapled, and available without an account. I would especially appreciate
 feedback on the CLI/GUI split and which macOS agent hosts or tools should be
 tested next.
