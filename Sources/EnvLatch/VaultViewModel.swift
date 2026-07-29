@@ -44,7 +44,7 @@ final class VaultViewModel: ObservableObject {
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppLocalization.message(for: error)
         }
     }
 
@@ -69,11 +69,17 @@ final class VaultViewModel: ObservableObject {
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
             statusMessage = replacing
-                ? "Updated \(name.rawValue)."
-                : "Saved \(name.rawValue) in Keychain."
+                ? AppLocalization.text(
+                    "status.key.updated",
+                    "Updated \(name.rawValue)."
+                )
+                : AppLocalization.text(
+                    "status.key.saved",
+                    "Saved \(name.rawValue) in Keychain."
+                )
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppLocalization.message(for: error)
             return false
         }
     }
@@ -85,9 +91,12 @@ final class VaultViewModel: ObservableObject {
             profiles = try profileStore.list()
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
-            statusMessage = "Deleted \(name.rawValue) from Keychain."
+            statusMessage = AppLocalization.text(
+                "status.key.deleted",
+                "Deleted \(name.rawValue) from Keychain."
+            )
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppLocalization.message(for: error)
         }
     }
 
@@ -106,10 +115,13 @@ final class VaultViewModel: ObservableObject {
             try launchProfileStore.upsert(profile)
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
-            statusMessage = "Saved key group \(profile.name)."
+            statusMessage = AppLocalization.text(
+                "status.group.saved",
+                "Saved key group \(profile.name)."
+            )
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppLocalization.message(for: error)
             return false
         }
     }
@@ -119,9 +131,12 @@ final class VaultViewModel: ObservableObject {
             try launchProfileStore.delete(named: profile.name)
             launchProfiles = try launchProfileStore.list()
             errorMessage = nil
-            statusMessage = "Deleted key group \(profile.name)."
+            statusMessage = AppLocalization.text(
+                "status.group.deleted",
+                "Deleted key group \(profile.name)."
+            )
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = AppLocalization.message(for: error)
         }
     }
 }

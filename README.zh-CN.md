@@ -34,6 +34,9 @@ envlatch run --using "Backend" -- npm test
 EnvLatch 启动后的程序收到的是普通环境变量，所以现有代码仍然像读取 `.env` 一样工作。不需要
 EnvLatch SDK、不需要 Provider 专用命令、不需要代理，也不需要修改业务代码。
 
+原生 App 会跟随 macOS 语言显示英文或简体中文。命令、环境变量名称、Provider 名称和复制给
+Agent 的设置提示词在不同语言下保持不变。
+
 ## 为什么用 EnvLatch
 
 - **所有 Provider 和工具共用一条命令。** 直接选择已保存的 Key，或选择可选的 Key
@@ -46,6 +49,8 @@ EnvLatch SDK、不需要 Provider 专用命令、不需要代理，也不需要�
   Key 名称，并包装它原本要运行的命令。
 - **原生、本地。** 值保存在 macOS 默认钥匙串的非同步项目中；没有服务器、账号、同步层或
   自制加密算法。
+- **人看的界面支持双语。** 原生 GUI、对话框、输入校验、修复说明和辅助功能标签支持英文与
+  简体中文，同时保持 CLI 契约不变。
 
 ![EnvLatch Provider 卡片式 Key Dashboard，包含 OpenAI、Anthropic、OpenRouter、GitHub 和可复用 Key Group](docs/assets/marketing/envlatch-main-demo.png)
 
@@ -77,11 +82,11 @@ open "$HOME/Applications/EnvLatch.app"
 
 ## 快速开始
 
-1. 打开 EnvLatch，选择 **Add Key**，再选择 Provider 预设或 **Custom**。
+1. 打开 EnvLatch，选择**添加密钥**，再选择 Provider 预设或**自定义**。
 2. 保存一个像环境变量的名称，例如 `OPENAI_API_KEY`、`ANTHROPIC_API_KEY`、
    `GITHUB_TOKEN` 或 `AWS_SECRET_ACCESS_KEY`。
-3. 如果客户端通过兼容 API 访问自定义 Endpoint，启用 **Endpoint profile**，设置
-   Contract、Base URL 和目标凭证环境变量。
+3. 如果客户端通过兼容 API 访问自定义 Endpoint，启用**配置端点信息**，设置
+   API 兼容格式、Base URL 和目标凭证环境变量。
 4. 直接使用已保存的 Key 名称启动原命令：
 
 ```sh

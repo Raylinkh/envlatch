@@ -57,52 +57,76 @@ struct VaultView: View {
             )
         }
         .alert(
-            "Delete \(pendingDeletion?.rawValue ?? "key")?",
+            AppLocalization.text(
+                "vault.deleteKey.title",
+                "Delete \(pendingDeletion?.rawValue ?? "key")?"
+            ),
             isPresented: Binding(
                 get: { pendingDeletion != nil },
                 set: { if !$0 { pendingDeletion = nil } }
             ),
             presenting: pendingDeletion
         ) { name in
-            Button("Delete", role: .destructive) {
+            Button(AppLocalization.text("action.delete", "Delete"), role: .destructive) {
                 model.delete(name)
                 pendingDeletion = nil
             }
-            Button("Cancel", role: .cancel) {
+            Button(AppLocalization.text("action.cancel", "Cancel"), role: .cancel) {
                 pendingDeletion = nil
             }
         } message: { _ in
-            Text("This permanently removes the value from your default Keychain.")
+            Text(
+                AppLocalization.text(
+                    "vault.deleteKey.message",
+                    "This permanently removes the value from your default Keychain."
+                )
+            )
         }
         .alert(
-            "Delete key group \(pendingLaunchProfileDeletion?.name ?? "group")?",
+            AppLocalization.text(
+                "vault.deleteGroup.title",
+                "Delete key group \(pendingLaunchProfileDeletion?.name ?? "group")?"
+            ),
             isPresented: Binding(
                 get: { pendingLaunchProfileDeletion != nil },
                 set: { if !$0 { pendingLaunchProfileDeletion = nil } }
             ),
             presenting: pendingLaunchProfileDeletion
         ) { profile in
-            Button("Delete", role: .destructive) {
+            Button(AppLocalization.text("action.delete", "Delete"), role: .destructive) {
                 model.deleteLaunchProfile(profile)
                 pendingLaunchProfileDeletion = nil
             }
-            Button("Cancel", role: .cancel) {
+            Button(AppLocalization.text("action.cancel", "Cancel"), role: .cancel) {
                 pendingLaunchProfileDeletion = nil
             }
         } message: { _ in
-            Text("Saved keys remain in Keychain.")
+            Text(
+                AppLocalization.text(
+                    "vault.deleteGroup.message",
+                    "Saved keys remain in Keychain."
+                )
+            )
         }
         .alert(
-            "EnvLatch couldn't complete that action",
+            AppLocalization.text(
+                "vault.error.title",
+                "EnvLatch couldn't complete that action"
+            ),
             isPresented: Binding(
                 get: { model.errorMessage != nil },
                 set: { if !$0 { model.errorMessage = nil } }
             )
         ) {
-            Button("OK", role: .cancel) { model.errorMessage = nil }
-            Button("Retry") { model.refresh() }
+            Button(AppLocalization.text("action.ok", "OK"), role: .cancel) {
+                model.errorMessage = nil
+            }
+            Button(AppLocalization.text("action.retry", "Retry")) { model.refresh() }
         } message: {
-            Text(model.errorMessage ?? "Unknown error")
+            Text(
+                model.errorMessage
+                    ?? AppLocalization.text("error.unknown", "Unknown error")
+            )
         }
         .onAppear(perform: refreshPairingStatus)
     }
@@ -118,7 +142,12 @@ struct VaultView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("EnvLatch")
                         .font(.title2.weight(.semibold))
-                    Text("One Keychain for every local agent")
+                    Text(
+                        AppLocalization.text(
+                            "vault.header.tagline",
+                            "One Keychain for every local agent"
+                        )
+                    )
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
@@ -128,25 +157,41 @@ struct VaultView: View {
                 Button {
                     editor = KeyEditorState(existingName: nil, profile: nil)
                 } label: {
-                    Label("Add Key", systemImage: "plus")
+                    Label(
+                        AppLocalization.text("vault.action.addKey", "Add Key"),
+                        systemImage: "plus"
+                    )
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(nsColor: .controlAccentColor))
                 .keyboardShortcut("n", modifiers: .command)
-                .accessibilityHint("Opens a secure form for a new credential")
+                .accessibilityHint(
+                    AppLocalization.text(
+                        "vault.action.addKey.hint",
+                        "Opens a secure form for a new credential"
+                    )
+                )
             }
 
             HStack(spacing: 8) {
                 StatusChip(
-                    text: "\(model.names.count) \(model.names.count == 1 ? "key" : "keys")",
+                    text: AppLocalization.keyCount(model.names.count),
                     systemImage: "key.fill"
                 )
                 StatusChip(
-                    text: "\(model.launchProfiles.count) \(model.launchProfiles.count == 1 ? "group" : "groups")",
+                    text: AppLocalization.groupCount(model.launchProfiles.count),
                     systemImage: "square.stack.3d.up.fill"
                 )
                 StatusChip(
-                    text: pairingStatus == .paired ? "Agent setup ready" : "Setup needs repair",
+                    text: pairingStatus == .paired
+                        ? AppLocalization.text(
+                            "vault.agentSetup.readyChip",
+                            "Agent setup ready"
+                        )
+                        : AppLocalization.text(
+                            "vault.agentSetup.repairChip",
+                            "Setup needs repair"
+                        ),
                     systemImage: pairingStatus == .paired
                         ? "checkmark.shield.fill"
                         : "exclamationmark.shield.fill",
@@ -159,7 +204,10 @@ struct VaultView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                    TextField("Search keys", text: $searchText)
+                    TextField(
+                        AppLocalization.text("vault.search.placeholder", "Search keys"),
+                        text: $searchText
+                    )
                         .textFieldStyle(.plain)
                 }
                 .padding(.horizontal, 10)
@@ -181,7 +229,12 @@ struct VaultView: View {
         if model.isLoading {
             VStack(spacing: 10) {
                 ProgressView()
-                Text("Reading Keychain…")
+                Text(
+                    AppLocalization.text(
+                        "vault.loading",
+                        "Reading Keychain…"
+                    )
+                )
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, minHeight: 280)
@@ -189,7 +242,7 @@ struct VaultView: View {
             VStack(spacing: 12) {
                 ProviderMark(
                     presentation: ProviderPresentation(
-                        name: "Keychain",
+                        name: AppLocalization.text("vault.keychain", "Keychain"),
                         iconAssetName: nil,
                         usesOriginalIconColor: false,
                         fallbackSymbolName: "lock.shield.fill",
@@ -197,13 +250,28 @@ struct VaultView: View {
                     ),
                     size: 52
                 )
-                Text("Your Keychain is ready")
+                Text(
+                    AppLocalization.text(
+                        "vault.empty.title",
+                        "Your Keychain is ready"
+                    )
+                )
                     .font(.title3.weight(.semibold))
-                Text("Add a provider key once, then launch any agent or backend with the normal environment variable it already expects.")
+                Text(
+                    AppLocalization.text(
+                        "vault.empty.detail",
+                        "Add a provider key once, then launch any agent or backend with the normal environment variable it already expects."
+                    )
+                )
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 440)
-                Button("Add your first key") {
+                Button(
+                    AppLocalization.text(
+                        "vault.empty.action",
+                        "Add your first key"
+                    )
+                ) {
                     editor = KeyEditorState(existingName: nil, profile: nil)
                 }
                 .buttonStyle(.bordered)
@@ -214,10 +282,13 @@ struct VaultView: View {
         } else {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(
-                    title: "Keys",
+                    title: AppLocalization.text("vault.keys.title", "Keys"),
                     detail: searchText.isEmpty
-                        ? "Values stay hidden in macOS Keychain"
-                        : "\(filteredNames.count) matching"
+                        ? AppLocalization.text(
+                            "vault.keys.hiddenDetail",
+                            "Values stay hidden in macOS Keychain"
+                        )
+                        : AppLocalization.matchingCount(filteredNames.count)
                 )
 
                 if filteredNames.isEmpty {
@@ -225,9 +296,19 @@ struct VaultView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.title2)
                             .foregroundStyle(.secondary)
-                        Text("No matching keys")
+                        Text(
+                            AppLocalization.text(
+                                "vault.search.emptyTitle",
+                                "No matching keys"
+                            )
+                        )
                             .font(.headline)
-                        Text("Try a provider, environment name, contract, or endpoint.")
+                        Text(
+                            AppLocalization.text(
+                                "vault.search.emptyDetail",
+                                "Try a provider, environment name, contract, or endpoint."
+                            )
+                        )
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -252,7 +333,12 @@ struct VaultView: View {
                 }
             }
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Saved API keys")
+            .accessibilityLabel(
+                AppLocalization.text(
+                    "vault.keys.accessibilityLabel",
+                    "Saved API keys"
+                )
+            )
         }
     }
 
@@ -260,17 +346,34 @@ struct VaultView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 SectionHeader(
-                    title: "Key groups",
-                    detail: "Reusable combinations for commands that need several keys"
+                    title: AppLocalization.text(
+                        "vault.groups.title",
+                        "Key groups"
+                    ),
+                    detail: AppLocalization.text(
+                        "vault.groups.detail",
+                        "Reusable combinations for commands that need several keys"
+                    )
                 )
                 Spacer()
                 Button {
                     launchProfileEditor = LaunchProfileEditorState(profile: nil)
                 } label: {
-                    Label("New Group", systemImage: "plus")
+                    Label(
+                        AppLocalization.text(
+                            "vault.groups.new",
+                            "New Group"
+                        ),
+                        systemImage: "plus"
+                    )
                 }
                 .buttonStyle(.bordered)
-                .accessibilityHint("Creates an optional named set of saved keys")
+                .accessibilityHint(
+                    AppLocalization.text(
+                        "vault.groups.new.hint",
+                        "Creates an optional named set of saved keys"
+                    )
+                )
             }
 
             if model.launchProfiles.isEmpty {
@@ -278,7 +381,12 @@ struct VaultView: View {
                     Image(systemName: "square.stack.3d.up")
                         .font(.title3)
                         .foregroundStyle(.secondary)
-                    Text("Create a group when the same backend or agent repeatedly needs several keys.")
+                    Text(
+                        AppLocalization.text(
+                            "vault.groups.empty",
+                            "Create a group when the same backend or agent repeatedly needs several keys."
+                        )
+                    )
                         .font(.callout)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -314,7 +422,10 @@ struct VaultView: View {
             )
 
             Label(
-                "Use one key directly, repeat `--using` for a one-off multi-key command, or save a reusable key group.",
+                AppLocalization.text(
+                    "vault.launch.guidance",
+                    "Use one key directly, repeat `--using` for a one-off multi-key command, or save a reusable key group."
+                ),
                 systemImage: "exclamationmark.shield"
             )
             .font(.caption)
@@ -359,7 +470,7 @@ struct VaultView: View {
             pairedHosts = try PairedHostStore.current().list()
             pairingError = nil
         } catch {
-            pairingError = error.localizedDescription
+            pairingError = AppLocalization.message(for: error)
         }
     }
 }
@@ -421,16 +532,30 @@ private struct KeyCard: View {
                 Spacer(minLength: 4)
 
                 Menu {
-                    Button("Edit", systemImage: "pencil", action: onEdit)
+                    Button(
+                        AppLocalization.text("action.edit", "Edit"),
+                        systemImage: "pencil",
+                        action: onEdit
+                    )
                     Divider()
-                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+                    Button(
+                        AppLocalization.text("action.delete", "Delete"),
+                        systemImage: "trash",
+                        role: .destructive,
+                        action: onDelete
+                    )
                 } label: {
                     Image(systemName: "ellipsis")
                         .frame(width: 24, height: 24)
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
-                .accessibilityLabel("Actions for \(name.rawValue)")
+                .accessibilityLabel(
+                    AppLocalization.text(
+                        "vault.key.actions",
+                        "Actions for \(name.rawValue)"
+                    )
+                )
             }
 
             if let profile {
@@ -443,16 +568,26 @@ private struct KeyCard: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             } else {
-                Text("Direct environment variable")
+                Text(
+                    AppLocalization.text(
+                        "vault.key.directEnvironment",
+                        "Direct environment variable"
+                    )
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             HStack(spacing: 6) {
                 Image(systemName: "lock.fill")
-                Text("Value hidden in Keychain")
+                Text(
+                    AppLocalization.text(
+                        "vault.key.valueHidden",
+                        "Value hidden in Keychain"
+                    )
+                )
                 Spacer()
-                Button("Edit", action: onEdit)
+                Button(AppLocalization.text("action.edit", "Edit"), action: onEdit)
                     .buttonStyle(.link)
             }
             .font(.caption)
@@ -497,7 +632,7 @@ private struct LaunchProfileCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(profile.name)
                         .font(.callout.weight(.semibold))
-                    Text("\(profile.credentialNames.count) \(profile.credentialNames.count == 1 ? "key" : "keys")")
+                    Text(AppLocalization.keyCount(profile.credentialNames.count))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -505,16 +640,30 @@ private struct LaunchProfileCard: View {
                 Spacer()
 
                 Menu {
-                    Button("Edit", systemImage: "pencil", action: onEdit)
+                    Button(
+                        AppLocalization.text("action.edit", "Edit"),
+                        systemImage: "pencil",
+                        action: onEdit
+                    )
                     Divider()
-                    Button("Delete", systemImage: "trash", role: .destructive, action: onDelete)
+                    Button(
+                        AppLocalization.text("action.delete", "Delete"),
+                        systemImage: "trash",
+                        role: .destructive,
+                        action: onDelete
+                    )
                 } label: {
                     Image(systemName: "ellipsis")
                         .frame(width: 24, height: 24)
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
-                .accessibilityLabel("Actions for key group \(profile.name)")
+                .accessibilityLabel(
+                    AppLocalization.text(
+                        "vault.group.actions",
+                        "Actions for key group \(profile.name)"
+                    )
+                )
             }
 
             Text(profile.credentialNames.map(\.rawValue).joined(separator: "  ·  "))
@@ -522,7 +671,10 @@ private struct LaunchProfileCard: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
 
-            Button("Edit group", action: onEdit)
+            Button(
+                AppLocalization.text("vault.group.edit", "Edit group"),
+                action: onEdit
+            )
                 .buttonStyle(.link)
                 .font(.caption)
         }
@@ -550,7 +702,10 @@ private struct AgentSetupDisclosure: View {
             VStack(alignment: .leading, spacing: 12) {
                 if pairedHosts.isEmpty {
                     Label(
-                        "No named agents or hosts have paired yet.",
+                        AppLocalization.text(
+                            "vault.agentSetup.empty",
+                            "No named agents or hosts have paired yet."
+                        ),
                         systemImage: "person.crop.circle.badge.questionmark"
                     )
                     .font(.caption)
@@ -578,18 +733,36 @@ private struct AgentSetupDisclosure: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Setup prompt")
+                        Text(
+                            AppLocalization.text(
+                                "vault.agentSetup.promptTitle",
+                                "Setup prompt"
+                            )
+                        )
                             .font(.caption.weight(.semibold))
                         Spacer()
                         Button(action: copyPrompt) {
                             Label(
-                                copiedContent == setupPrompt ? "Copied" : "Copy setup prompt",
+                                copiedContent == setupPrompt
+                                    ? AppLocalization.text(
+                                        "vault.agentSetup.copied",
+                                        "Copied"
+                                    )
+                                    : AppLocalization.text(
+                                        "vault.agentSetup.copyPrompt",
+                                        "Copy setup prompt"
+                                    ),
                                 systemImage: copiedContent == setupPrompt ? "checkmark" : "doc.on.doc"
                             )
                         }
                         .buttonStyle(.borderless)
                         .font(.caption)
-                        .accessibilityHint("Copies pairing, doctor, help, and launch instructions with no secret values")
+                        .accessibilityHint(
+                            AppLocalization.text(
+                                "vault.agentSetup.copyPrompt.hint",
+                                "Copies pairing, doctor, help, and launch instructions with no secret values"
+                            )
+                        )
                     }
 
                     ScrollView {
@@ -608,7 +781,13 @@ private struct AgentSetupDisclosure: View {
                 }
 
                 Button(action: onRefresh) {
-                    Label("Refresh paired hosts", systemImage: "arrow.clockwise")
+                    Label(
+                        AppLocalization.text(
+                            "vault.agentSetup.refresh",
+                            "Refresh paired hosts"
+                        ),
+                        systemImage: "arrow.clockwise"
+                    )
                 }
                 .buttonStyle(.link)
                 .font(.caption)
@@ -616,7 +795,13 @@ private struct AgentSetupDisclosure: View {
             .padding(.top, 10)
         } label: {
             HStack(spacing: 10) {
-                Label("Agent setup", systemImage: "person.2.badge.gearshape")
+                Label(
+                    AppLocalization.text(
+                        "vault.agentSetup.title",
+                        "Agent setup"
+                    ),
+                    systemImage: "person.2.badge.gearshape"
+                )
                     .font(.headline)
                 Spacer()
                 Label(summary, systemImage: sharedStatus == .paired ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
@@ -624,12 +809,22 @@ private struct AgentSetupDisclosure: View {
                     .foregroundStyle(sharedStatus == .paired ? Color.secondary : Color.orange)
             }
         }
-        .accessibilityHint("Expands named paired-host status and the reusable setup prompt")
+        .accessibilityHint(
+            AppLocalization.text(
+                "vault.agentSetup.expand.hint",
+                "Expands named paired-host status and the reusable setup prompt"
+            )
+        )
     }
 
     private var summary: String {
-        guard sharedStatus == .paired else { return "Shared setup needs repair" }
-        return "\(pairedHosts.count) named \(pairedHosts.count == 1 ? "host" : "hosts") paired"
+        guard sharedStatus == .paired else {
+            return AppLocalization.text(
+                "vault.agentSetup.needsRepair",
+                "Shared setup needs repair"
+            )
+        }
+        return AppLocalization.pairedHostCount(pairedHosts.count)
     }
 
     private func copyPrompt() {
@@ -651,7 +846,17 @@ private struct PairedHostRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(host.name)
                     .font(.callout.weight(.medium))
-                Text(sharedStatus == .paired ? "Ready" : "Paired name saved · shared setup needs repair")
+                Text(
+                    sharedStatus == .paired
+                        ? AppLocalization.text(
+                            "vault.agentSetup.hostReady",
+                            "Ready"
+                        )
+                        : AppLocalization.text(
+                            "vault.agentSetup.hostNeedsRepair",
+                            "Paired name saved · shared setup needs repair"
+                        )
+                )
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -703,24 +908,47 @@ private struct LaunchProfileEditorSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(existingProfile == nil ? "New key group" : "Edit key group")
+                Text(
+                    existingProfile == nil
+                        ? AppLocalization.text(
+                            "groupEditor.title.new",
+                            "New key group"
+                        )
+                        : AppLocalization.text(
+                            "groupEditor.title.edit",
+                            "Edit key group"
+                        )
+                )
                     .font(.title3.weight(.semibold))
-                Text("Select exactly the keys this command or backend needs. Values stay hidden in Keychain.")
+                Text(
+                    AppLocalization.text(
+                        "groupEditor.detail",
+                        "Select exactly the keys this command or backend needs. Values stay hidden in Keychain."
+                    )
+                )
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("Group name")
+                Text(AppLocalization.text("groupEditor.name", "Group name"))
                     .font(.callout.weight(.medium))
-                TextField("Backend", text: $name)
+                TextField(
+                    AppLocalization.text("groupEditor.name.placeholder", "Backend"),
+                    text: $name
+                )
                     .textFieldStyle(.roundedBorder)
                     .focused($nameFocused)
                     .disabled(existingProfile != nil)
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Available keys")
+                Text(
+                    AppLocalization.text(
+                        "groupEditor.availableKeys",
+                        "Available keys"
+                    )
+                )
                     .font(.callout.weight(.medium))
                 ScrollView {
                     VStack(alignment: .leading, spacing: 9) {
@@ -756,9 +984,16 @@ private struct LaunchProfileEditorSheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel", role: .cancel) { dismiss() }
+                Button(AppLocalization.text("action.cancel", "Cancel"), role: .cancel) {
+                    dismiss()
+                }
                     .keyboardShortcut(.cancelAction)
-                Button("Save Group") {
+                Button(
+                    AppLocalization.text(
+                        "groupEditor.save",
+                        "Save Group"
+                    )
+                ) {
                     attemptedSave = true
                     guard let profile = try? makeProfile(), validationError == nil else { return }
                     if onSave(profile) {
@@ -780,7 +1015,7 @@ private struct LaunchProfileEditorSheet: View {
             _ = try makeProfile()
             return nil
         } catch {
-            return error.localizedDescription
+            return AppLocalization.message(for: error)
         }
     }
 
@@ -839,18 +1074,43 @@ private struct KeyEditorSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(existingName == nil ? "Add API key" : "Edit API key")
+                Text(
+                    existingName == nil
+                        ? AppLocalization.text(
+                            "keyEditor.title.add",
+                            "Add API key"
+                        )
+                        : AppLocalization.text(
+                            "keyEditor.title.edit",
+                            "Edit API key"
+                        )
+                )
                     .font(.title3.weight(.semibold))
-                Text("The secret stays in your default Keychain. Endpoint settings never contain its value.")
+                Text(
+                    AppLocalization.text(
+                        "keyEditor.detail",
+                        "The secret stays in your default Keychain. Endpoint settings never contain its value."
+                    )
+                )
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
 
             if existingName == nil {
                 VStack(alignment: .leading, spacing: 9) {
-                    Text("Start with a provider")
+                    Text(
+                        AppLocalization.text(
+                            "keyEditor.provider.title",
+                            "Start with a provider"
+                        )
+                    )
                         .font(.callout.weight(.medium))
-                    Text("Pick a preset to fill the environment name, API contract, and base URL. Everything remains editable.")
+                    Text(
+                        AppLocalization.text(
+                            "keyEditor.provider.detail",
+                            "Pick a preset to fill the environment name, API contract, and base URL. Everything remains editable."
+                        )
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -873,7 +1133,10 @@ private struct KeyEditorSheet: View {
                             HStack(spacing: 8) {
                                 ProviderMark(
                                     presentation: ProviderPresentation(
-                                        name: "Custom",
+                                        name: AppLocalization.text(
+                                            "keyEditor.provider.custom",
+                                            "Custom"
+                                        ),
                                         iconAssetName: nil,
                                         usesOriginalIconColor: false,
                                         fallbackSymbolName: "slider.horizontal.3",
@@ -881,7 +1144,12 @@ private struct KeyEditorSheet: View {
                                     ),
                                     size: 30
                                 )
-                                Text("Custom")
+                                Text(
+                                    AppLocalization.text(
+                                        "keyEditor.provider.custom",
+                                        "Custom"
+                                    )
+                                )
                                     .font(.callout.weight(.medium))
                                 Spacer(minLength: 0)
                             }
@@ -909,7 +1177,12 @@ private struct KeyEditorSheet: View {
             }
 
             VStack(alignment: .leading, spacing: 7) {
-                Text("Environment name")
+                Text(
+                    AppLocalization.text(
+                        "keyEditor.environmentName",
+                        "Environment name"
+                    )
+                )
                     .font(.callout.weight(.medium))
                 TextField("OPENAI_API_KEY", text: $rawName)
                     .textFieldStyle(.roundedBorder)
@@ -921,20 +1194,56 @@ private struct KeyEditorSheet: View {
                             rawName = newValue.uppercased()
                         }
                     }
-                    .accessibilityHint("Uppercase credential name such as OPENAI_API_KEY")
+                    .accessibilityHint(
+                        AppLocalization.text(
+                            "keyEditor.environmentName.hint",
+                            "Uppercase credential name such as OPENAI_API_KEY"
+                        )
+                    )
                 Text(nameGuidance)
                     .font(.caption)
                     .foregroundStyle(nameError == nil ? Color.secondary : Color.red)
             }
 
             VStack(alignment: .leading, spacing: 7) {
-                Text(existingName == nil ? "Value" : "New value (optional)")
+                Text(
+                    existingName == nil
+                        ? AppLocalization.text(
+                            "keyEditor.value",
+                            "Value"
+                        )
+                        : AppLocalization.text(
+                            "keyEditor.value.optional",
+                            "New value (optional)"
+                        )
+                )
                     .font(.callout.weight(.medium))
-                SecureField("Paste the key", text: $value)
+                SecureField(
+                    AppLocalization.text(
+                        "keyEditor.value.placeholder",
+                        "Paste the key"
+                    ),
+                    text: $value
+                )
                     .textFieldStyle(.roundedBorder)
                     .focused($focusedField, equals: .value)
-                    .accessibilityHint("Secret value; characters are hidden")
-                Text(existingName == nil ? "Saved directly to Keychain." : "Leave blank to keep the current Keychain value.")
+                    .accessibilityHint(
+                        AppLocalization.text(
+                            "keyEditor.value.hint",
+                            "Secret value; characters are hidden"
+                        )
+                    )
+                Text(
+                    existingName == nil
+                        ? AppLocalization.text(
+                            "keyEditor.value.newDetail",
+                            "Saved directly to Keychain."
+                        )
+                        : AppLocalization.text(
+                            "keyEditor.value.editDetail",
+                            "Leave blank to keep the current Keychain value."
+                        )
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if attemptedSave, let valueError {
@@ -947,7 +1256,13 @@ private struct KeyEditorSheet: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-                Toggle("Configure endpoint profile", isOn: $configureEndpoint)
+                Toggle(
+                    AppLocalization.text(
+                        "keyEditor.endpoint.toggle",
+                        "Configure endpoint profile"
+                    ),
+                    isOn: $configureEndpoint
+                )
                     .font(.callout.weight(.medium))
                     .onChange(of: configureEndpoint) { isEnabled in
                         if !isEnabled {
@@ -958,16 +1273,32 @@ private struct KeyEditorSheet: View {
                 if configureEndpoint {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Provider / profile")
+                            Text(
+                                AppLocalization.text(
+                                    "keyEditor.endpoint.provider",
+                                    "Provider / profile"
+                                )
+                            )
                                 .font(.caption.weight(.medium))
                             TextField("MiniMax China", text: $providerName)
                                 .textFieldStyle(.roundedBorder)
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("API contract")
+                            Text(
+                                AppLocalization.text(
+                                    "keyEditor.endpoint.contract",
+                                    "API contract"
+                                )
+                            )
                                 .font(.caption.weight(.medium))
-                            Picker("API contract", selection: $contract) {
+                            Picker(
+                                AppLocalization.text(
+                                    "keyEditor.endpoint.contract",
+                                    "API contract"
+                                ),
+                                selection: $contract
+                            ) {
                                 ForEach(APIContract.allCases, id: \.self) { option in
                                     Text(option.displayName).tag(option)
                                 }
@@ -988,7 +1319,12 @@ private struct KeyEditorSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("API base URL")
+                        Text(
+                            AppLocalization.text(
+                                "keyEditor.endpoint.baseURL",
+                                "API base URL"
+                            )
+                        )
                             .font(.caption.weight(.medium))
                         TextField("https://api.example.com", text: $baseURL)
                             .textFieldStyle(.roundedBorder)
@@ -996,7 +1332,12 @@ private struct KeyEditorSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Expose this key as")
+                        Text(
+                            AppLocalization.text(
+                                "keyEditor.endpoint.exposeAs",
+                                "Expose this key as"
+                            )
+                        )
                             .font(.caption.weight(.medium))
                         TextField(contract.defaultCredentialEnvironmentName, text: $credentialEnvironmentName)
                             .textFieldStyle(.roundedBorder)
@@ -1004,7 +1345,12 @@ private struct KeyEditorSheet: View {
                             .onChange(of: credentialEnvironmentName) { newValue in
                                 credentialEnvironmentName = newValue.uppercased()
                             }
-                        Text("Agents use the same `run --using` command; this binding adapts the key to the target client.")
+                        Text(
+                            AppLocalization.text(
+                                "keyEditor.endpoint.bindingDetail",
+                                "Agents use the same `run --using` command; this binding adapts the key to the target client."
+                            )
+                        )
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -1019,9 +1365,21 @@ private struct KeyEditorSheet: View {
 
             HStack {
                 Spacer()
-                Button("Cancel", role: .cancel) { dismiss() }
+                Button(AppLocalization.text("action.cancel", "Cancel"), role: .cancel) {
+                    dismiss()
+                }
                     .keyboardShortcut(.cancelAction)
-                Button(existingName == nil ? "Save Key" : "Save Changes") {
+                Button(
+                    existingName == nil
+                        ? AppLocalization.text(
+                            "keyEditor.save.new",
+                            "Save Key"
+                        )
+                        : AppLocalization.text(
+                            "keyEditor.save.edit",
+                            "Save Changes"
+                        )
+                ) {
                     attemptedSave = true
                     guard nameError == nil, valueError == nil, profileError == nil else { return }
                     let profile = configureEndpoint ? try? makeProfile() : nil
@@ -1044,13 +1402,18 @@ private struct KeyEditorSheet: View {
 
     private var nameError: String? {
         if rawName.isEmpty {
-            return attemptedSave ? "Enter an environment name." : nil
+            return attemptedSave
+                ? AppLocalization.text(
+                    "keyEditor.error.emptyName",
+                    "Enter an environment name."
+                )
+                : nil
         }
         do {
             _ = try CredentialName(validating: rawName)
             return nil
         } catch {
-            return error.localizedDescription
+            return AppLocalization.message(for: error)
         }
     }
 
@@ -1062,12 +1425,16 @@ private struct KeyEditorSheet: View {
             try CredentialName.validateValue(value)
             return nil
         } catch {
-            return error.localizedDescription
+            return AppLocalization.message(for: error)
         }
     }
 
     private var nameGuidance: String {
-        nameError ?? "Credential names end in API_KEY, TOKEN, SECRET, PASSWORD, ACCESS_KEY, PRIVATE_KEY, or CREDENTIAL."
+        nameError
+            ?? AppLocalization.text(
+                "keyEditor.nameGuidance",
+                "Credential names end in API_KEY, TOKEN, SECRET, PASSWORD, ACCESS_KEY, PRIVATE_KEY, or CREDENTIAL."
+            )
     }
 
     private var profileError: String? {
@@ -1076,7 +1443,7 @@ private struct KeyEditorSheet: View {
             _ = try makeProfile()
             return nil
         } catch {
-            return error.localizedDescription
+            return AppLocalization.message(for: error)
         }
     }
 
@@ -1141,7 +1508,12 @@ private struct ProviderPresetButton: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(preset.displayName) provider preset")
+        .accessibilityLabel(
+            AppLocalization.text(
+                "keyEditor.providerPreset.accessibilityLabel",
+                "\(preset.displayName) provider preset"
+            )
+        )
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

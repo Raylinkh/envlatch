@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "EnvLatch",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     products: [
         .library(name: "EnvLatchCore", targets: ["EnvLatchCore"]),

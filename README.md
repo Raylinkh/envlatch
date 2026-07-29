@@ -36,6 +36,10 @@ The launched process receives ordinary environment variables, so existing code
 keeps working as if the values came from a `.env` file. No EnvLatch SDK,
 provider-specific command, proxy, or code change is required.
 
+The native app follows the macOS language in English or Simplified Chinese.
+Commands, environment-variable names, provider names, and agent setup prompts
+remain stable across languages.
+
 ## Why EnvLatch
 
 - **One command for every provider and tool.** Use a saved key by name or an
@@ -50,6 +54,9 @@ provider-specific command, proxy, or code change is required.
   its normal command.
 - **Native and local.** Values stay in the non-synchronizing macOS default
   Keychain. There is no server, account, sync layer, or custom cryptography.
+- **Bilingual where people use it.** The native GUI, dialogs, validation,
+  recovery guidance, and accessibility labels support English and Simplified
+  Chinese without changing the CLI contract.
 
 ![EnvLatch provider-aware key dashboard with OpenAI, Anthropic, OpenRouter, GitHub, and a reusable key group](docs/assets/marketing/envlatch-main-demo.png)
 

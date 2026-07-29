@@ -1,4 +1,13 @@
-# EnvLatch v0.2.2 ship envelope
+# EnvLatch ship envelope
+
+Next release: v0.3.0
+Target: 2026-07-30
+Slice: Native English and Simplified Chinese GUI with unchanged CLI and agent
+contracts.
+Status: source implementation in progress; signed/notarized binary not yet
+published.
+
+## Current stable release
 
 Exposure surface: https://github.com/Raylinkh/envlatch
 Target ship date: 2026-07-29
