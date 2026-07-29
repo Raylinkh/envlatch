@@ -476,7 +476,7 @@ binary release.
 
 - Exact source: `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
 - Public CI: `30428180335` — success
-- Local assembled proof: 65 tests in 16 suites passed; the release-mode app
+- Local assembled proof: 66 tests in 17 suites passed; the release-mode app
   reported `EnvLatch 0.3.0`, carried
   `Contents/Resources/zh-Hans.lproj/Localizable.strings`, passed strict
   code-signature verification, and preserved English CLI output.
@@ -484,6 +484,10 @@ binary release.
   the checked runtime mirror matches the catalog, and critical static,
   interpolated, count, status, and validation messages resolve in both
   locales.
-- Pending boundary: real English and Simplified Chinese window inspection,
+- Visual smoke proof: the vault shell rendered in English and Simplified
+  Chinese at the default 880×700 window size. Both images were inspected for
+  header, button, status-chip, and count-label fit. The render test is retained
+  in the suite.
+- Pending boundary: installed-window and sheet inspection in both languages,
   Developer ID signing, notarization, public release assets, and public-asset
   re-download verification.
