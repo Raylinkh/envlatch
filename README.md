@@ -36,9 +36,11 @@ The launched process receives ordinary environment variables, so existing code
 keeps working as if the values came from a `.env` file. No EnvLatch SDK,
 provider-specific command, proxy, or code change is required.
 
-The native app follows the macOS language in English or Simplified Chinese.
-Commands, environment-variable names, provider names, and agent setup prompts
-remain stable across languages.
+The native app follows macOS by default, with **EnvLatch → Settings…** offering
+System Default, English, and Simplified Chinese. Settings also shows the exact
+version/build and whether the running copy is installed or a development
+build. Commands, environment-variable names, provider names, and agent setup
+prompts remain stable across languages.
 
 ## Why EnvLatch
 

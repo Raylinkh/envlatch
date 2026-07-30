@@ -40,11 +40,19 @@ fi
 codesign --verify --deep --strict "$stage_app"
 
 mkdir -p "$dist_dir"
+backup_app="$stage_root/previous.app"
 if [[ -e "$output_app" ]]; then
-  build_stamp=$(date +%Y%m%d-%H%M%S)
-  mv "$output_app" "$dist_dir/EnvLatch.previous-$build_stamp.app"
+  mv "$output_app" "$backup_app"
 fi
-mv "$stage_app" "$output_app"
+if ! mv "$stage_app" "$output_app"; then
+  if [[ -e "$backup_app" ]]; then
+    mv "$backup_app" "$output_app"
+  fi
+  exit 1
+fi
+if [[ -e "$backup_app" ]]; then
+  rm -rf "$backup_app"
+fi
 rmdir "$stage_root"
 
 echo "$output_app"

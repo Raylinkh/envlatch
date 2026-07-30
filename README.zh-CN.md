@@ -34,8 +34,9 @@ envlatch run --using "Backend" -- npm test
 EnvLatch 启动后的程序收到的是普通环境变量，所以现有代码仍然像读取 `.env` 一样工作。不需要
 EnvLatch SDK、不需要 Provider 专用命令、不需要代理，也不需要修改业务代码。
 
-原生 App 会跟随 macOS 语言显示英文或简体中文。命令、环境变量名称、Provider 名称和复制给
-Agent 的设置提示词在不同语言下保持不变。
+原生 App 默认跟随 macOS；也可以在 **EnvLatch → 设置…** 中选择“跟随系统”、English 或
+简体中文。设置页还会显示准确的版本/构建号，并说明当前运行的是已安装 App 还是开发构建。
+命令、环境变量名称、Provider 名称和复制给 Agent 的设置提示词在不同语言下保持不变。
 
 ## 为什么用 EnvLatch
 

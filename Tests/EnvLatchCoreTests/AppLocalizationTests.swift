@@ -103,6 +103,7 @@ struct AppLocalizationTests {
     private func usedLocalizationKeys(root: URL) throws -> Set<String> {
         let sourceURLs = [
             root.appendingPathComponent("Sources/EnvLatch/AppLocalization.swift"),
+            root.appendingPathComponent("Sources/EnvLatch/AppSettings.swift"),
             root.appendingPathComponent("Sources/EnvLatch/VaultView.swift"),
             root.appendingPathComponent("Sources/EnvLatch/VaultViewModel.swift"),
         ]

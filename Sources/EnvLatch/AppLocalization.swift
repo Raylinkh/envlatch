@@ -22,7 +22,7 @@ enum AppLocalization {
     ) -> String {
         let locale = locale
             ?? previewLocale
-            ?? Locale(identifier: bundle.preferredLocalizations.first ?? "en")
+            ?? AppLanguage.current.locale
         return String(
             localized: key,
             defaultValue: defaultValue,

@@ -469,14 +469,14 @@ Any change to Keychain queries, saved-key/group resolution, environment
 construction, execution, signing, bundle layout, installer migration, or
 release packaging invalidates the corresponding receipt above.
 
-# v0.3.0 source candidate — 2026-07-29
+# v0.3.0 source candidate — 2026-07-30
 
 The Simplified Chinese GUI source candidate is public but is not yet a signed
 binary release.
 
-- Exact source: `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
+- Localization base: `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
 - Public CI: `30428180335` — success
-- Local assembled proof: 66 tests in 17 suites passed; the release-mode app
+- Local assembled proof: 68 tests in 18 suites passed; the release-mode app
   reported `EnvLatch 0.3.0`, carried
   `Contents/Resources/zh-Hans.lproj/Localizable.strings`, passed strict
   code-signature verification, and preserved English CLI output.
@@ -488,6 +488,13 @@ binary release.
   Chinese at the default 880×700 window size. Both images were inspected for
   header, button, status-chip, and count-label fit. The render test is retained
   in the suite.
-- Pending boundary: installed-window and sheet inspection in both languages,
-  Developer ID signing, notarization, public release assets, and public-asset
-  re-download verification.
+- Native Settings proof: an isolated real app window exposed the standard
+  **Settings…** menu, showed version `0.3.0 (5)` and the running bundle
+  classification, fit without scrolling at 480×420, and changed the open vault
+  immediately between English and Simplified Chinese.
+- Copy identity proof: `~/Applications/EnvLatch.app` remains the signed,
+  notarized v0.2.2 installed copy; `dist/EnvLatch.app` is the ad-hoc-signed
+  v0.3.0 development artifact. The installed copy was not modified during QA.
+- Pending boundary: Developer ID signing, notarization, inspection of the exact
+  signed candidate, public release assets, and public-asset re-download
+  verification.

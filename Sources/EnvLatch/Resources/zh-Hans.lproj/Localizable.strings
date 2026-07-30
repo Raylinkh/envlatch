@@ -69,6 +69,17 @@
 "keyEditor.value.newDetail" = "直接保存到钥匙串。";
 "keyEditor.value.optional" = "新密钥值（可选）";
 "keyEditor.value.placeholder" = "粘贴密钥";
+"settings.about.development" = "开发构建";
+"settings.about.installed" = "已安装的应用";
+"settings.about.location" = "位置";
+"settings.about.other" = "应用包";
+"settings.about.showInFinder" = "在访达中显示";
+"settings.about.title" = "关于";
+"settings.about.version" = "版本";
+"settings.general.title" = "通用";
+"settings.language.detail" = "更改会立即生效。系统菜单继续跟随 macOS。";
+"settings.language.label" = "语言";
+"settings.language.system" = "跟随系统";
 "status.group.deleted" = "已删除密钥组 %@。";
 "status.group.saved" = "已保存密钥组 %@。";
 "status.key.deleted" = "已从钥匙串删除 %@。";
