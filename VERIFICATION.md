@@ -475,7 +475,8 @@ The Simplified Chinese GUI source candidate is public but is not yet a signed
 binary release.
 
 - Localization base: `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
-- Public CI: `30428180335` — success
+- Settings source: `cb38e3b6fccb068c7494372cfaa4adaadd3c502e`
+- Public CI: `30517468639` — success
 - Local assembled proof: 68 tests in 18 suites passed; the release-mode app
   reported `EnvLatch 0.3.0`, carried
   `Contents/Resources/zh-Hans.lproj/Localizable.strings`, passed strict

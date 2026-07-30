@@ -94,3 +94,19 @@
   child assertion that its environment variable was present. No value was
   printed and no provider request was made.
 - External community launch remains pending Hacker News account sign-in.
+
+## 2026-07-30
+
+- Published the native Settings and build-identity source candidate to public
+  `main` at `cb38e3b6fccb068c7494372cfaa4adaadd3c502e`.
+- Distribution artifact: the English and Chinese READMEs now show where to
+  choose System Default, English, or Simplified Chinese and where to find the
+  exact version/build and running-copy status.
+- Public CI run `30517468639` passed the exact source candidate.
+- The Settings window was inspected in a real isolated app process in English
+  and Simplified Chinese; changing the picker updated the open vault
+  immediately.
+- The build script now replaces its verified development app through a
+  temporary rollback copy instead of accumulating `EnvLatch.previous-*`
+  bundles.
+- Response: pending; no signed v0.3.0 binary or external community post yet.
