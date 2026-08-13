@@ -41,3 +41,21 @@ jobs:
         run: |
           ./scripts/package-unsigned-preview.sh
           ./scripts/verify-unsigned-preview.sh
+
+  swiftbuild:
+    runs-on: macos-26
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Verify SwiftPM swiftbuild engine
+        run: |
+          swift build --build-system swiftbuild -c release --product EnvLatch
+          bin_path=$(swift build --build-system swiftbuild -c release --show-bin-path)
+          test -f "$bin_path/EnvLatch_EnvLatch.bundle/Contents/Resources/zh-Hans.lproj/Localizable.strings"

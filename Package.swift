@@ -17,6 +17,8 @@ let package = Package(
         .executableTarget(
             name: "EnvLatch",
             dependencies: ["EnvLatchCore"],
+            // The checked .lproj mirrors are the sole SwiftPM runtime resources.
+            exclude: ["Resources/Localizable.xcstrings"],
             resources: [.process("Resources")],
             linkerSettings: [
                 .linkedFramework("AppKit"),
