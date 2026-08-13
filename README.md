@@ -20,7 +20,6 @@
   <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-111111?style=flat-square&amp;logo=apple">
   <img alt="Swift 6" src="https://img.shields.io/badge/Swift-6-F05138?style=flat-square&amp;logo=swift&amp;logoColor=white">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/Raylinkh/envlatch?style=flat-square"></a>
-  <a href="https://github.com/Raylinkh/envlatch/releases"><img alt="Release downloads" src="https://img.shields.io/github/downloads/Raylinkh/envlatch/total?style=flat-square&amp;label=downloads"></a>
 </p>
 
 ![How EnvLatch replaces copied .env files with one macOS Keychain for every local agent](docs/assets/marketing/envlatch-hero.png)
