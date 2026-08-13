@@ -69,6 +69,15 @@ ENVLATCH_SKILL_DIR="$success_root/user/.agents/skills/envlatch" \
 ENVLATCH_VERIFY_INSTALL=0 \
   "$mount_dir/Install EnvLatch.command" >/dev/null
 
+# Exercise the upgrade path so successful-install backups are created and
+# required to be removed rather than only testing a first install.
+ENVLATCH_APPLICATION_DIR="$success_root/Applications" \
+ENVLATCH_BIN_DIR="$success_root/bin" \
+ENVLATCH_USER_HOME="$success_root/user" \
+ENVLATCH_SKILL_DIR="$success_root/user/.agents/skills/envlatch" \
+ENVLATCH_VERIFY_INSTALL=0 \
+  "$mount_dir/Install EnvLatch.command" >/dev/null
+
 installed_app="$success_root/Applications/EnvLatch.app"
 installed_cli="$success_root/bin/envlatch"
 canonical_skill="$success_root/user/.agents/skills/envlatch"
@@ -90,6 +99,11 @@ for skill_link in \
   "$success_root/user/.gemini/skills/envlatch"; do
   test "${skill_link:A}" = "${canonical_skill:A}"
 done
+typeset -a stale_success_backups
+stale_success_backups=(
+  "$success_root"/**/{EnvLatch,AgentKeyring,envlatch,agent-keyring}.previous-*(DN)
+)
+(( ${#stale_success_backups} == 0 ))
 
 rollback_root="$test_root/rollback"
 old_app="$rollback_root/Applications/EnvLatch.app"
@@ -119,5 +133,6 @@ echo "dmg_payloads=4"
 echo "architecture=arm64"
 echo "signature=adhoc"
 echo "isolated_install=passed"
+echo "successful_upgrade_cleanup=passed"
 echo "induced_failure_rollback=passed"
 echo "gatekeeper_expected_rejection_exit=$gatekeeper_status"

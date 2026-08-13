@@ -70,6 +70,13 @@ ENVLATCH_VERIFY_INSTALL="$verify_install" \
 rollback_active=0
 trap - EXIT
 
+if (( installed_was_backed_up )); then
+  rm -rf "$installed_backup"
+fi
+if (( legacy_was_backed_up )); then
+  rm -rf "$legacy_backup"
+fi
+
 echo "Installed app: $installed_app"
 echo "Installed CLI: $binary_dir/envlatch"
 echo "Unsigned preview: macOS may require Privacy & Security > Open Anyway."

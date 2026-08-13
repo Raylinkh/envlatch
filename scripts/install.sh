@@ -65,5 +65,12 @@ ENVLATCH_VERIFY_INSTALL=1 \
 rollback_active=0
 trap - EXIT
 
+if (( installed_was_backed_up )); then
+  rm -rf "$installed_backup"
+fi
+if (( legacy_was_backed_up )); then
+  rm -rf "$legacy_backup"
+fi
+
 echo "Installed app: $installed_app"
 echo "Installed CLI: $binary_dir/envlatch"

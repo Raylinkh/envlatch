@@ -157,6 +157,11 @@ fi
 rollback_active=0
 trap - EXIT
 
+
+for backup in "${moved_backups[@]}"; do
+  rm -rf "$backup"
+done
+
 echo "EnvLatch CLI: $cli_link"
 echo "Shared skill: $canonical_skill"
 echo "Discovery links: Codex, Claude Code, Gemini CLI"
