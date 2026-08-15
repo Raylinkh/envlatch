@@ -1,19 +1,19 @@
-# EnvLatch v0.2.1 verification
+# EnvLatch release verification
 
-Date: 2026-07-28
+Date: 2026-08-15
 Platform: macOS arm64
-Code candidate: `c24eccd5ef3cb913cf3423c2765c51d57f61a6e1`
+Current tag source: `e36d9bd4951f00ffa3e302ec38da20fe3a54d877`
 
 ## Release verdict
 
 **SHIPPED AS A SIGNED AND NOTARIZED PUBLIC BINARY**
 
-The provider-aware dashboard, provider-agnostic launch behavior, repeated
-saved-key selection, create-only key groups, installed canonical skill,
-Keychain behavior, signed arm64 ZIP, and signed arm64 DMG have
-candidate-specific receipts. Apple accepted both v0.2.1 submissions, the
-tickets are stapled, Gatekeeper accepts both artifacts as Notarized Developer
-ID, and the public GitHub bytes passed the full release verifier.
+The v0.3.0 bilingual GUI, native Settings, provider-agnostic launch behavior,
+repeated saved-key selection, key groups, installed canonical skill, Keychain
+behavior, successful-upgrade cleanup, signed arm64 ZIP, and signed arm64 DMG
+have candidate-specific receipts. Apple accepted both submissions, the tickets
+are stapled, Gatekeeper accepts both artifacts as Notarized Developer ID, and
+the freshly downloaded public GitHub bytes passed the full release verifier.
 
 ## RED to GREEN
 
@@ -469,33 +469,55 @@ Any change to Keychain queries, saved-key/group resolution, environment
 construction, execution, signing, bundle layout, installer migration, or
 release packaging invalidates the corresponding receipt above.
 
-# v0.3.0 source candidate — 2026-07-30
+# v0.3.0 release verdict — 2026-08-15
 
-The Simplified Chinese GUI source candidate is public but is not yet a signed
-binary release.
+Verdict: verified public arm64 release.
 
-- Localization base: `77478bc74e73ec82940ead6c96e9be41ecee5c9e`
-- Settings source: `cb38e3b6fccb068c7494372cfaa4adaadd3c502e`
-- Public CI: `30517468639` — success
-- Local assembled proof: 68 tests in 18 suites passed; the release-mode app
-  reported `EnvLatch 0.3.0`, carried
-  `Contents/Resources/zh-Hans.lproj/Localizable.strings`, passed strict
-  code-signature verification, and preserved English CLI output.
-- Localization proof: every GUI key has a Simplified Chinese catalog entry,
-  the checked runtime mirror matches the catalog, and critical static,
-  interpolated, count, status, and validation messages resolve in both
-  locales.
-- Visual smoke proof: the vault shell rendered in English and Simplified
-  Chinese at the default 880×700 window size. Both images were inspected for
-  header, button, status-chip, and count-label fit. The render test is retained
-  in the suite.
-- Native Settings proof: an isolated real app window exposed the standard
-  **Settings…** menu, showed version `0.3.0 (5)` and the running bundle
-  classification, fit without scrolling at 480×420, and changed the open vault
-  immediately between English and Simplified Chinese.
-- Copy identity proof: `~/Applications/EnvLatch.app` remains the signed,
-  notarized v0.2.2 installed copy; `dist/EnvLatch.app` is the ad-hoc-signed
-  v0.3.0 development artifact. The installed copy was not modified during QA.
-- Pending boundary: Developer ID signing, notarization, inspection of the exact
-  signed candidate, public release assets, and public-asset re-download
-  verification.
+- Exact tag source: `e36d9bd4951f00ffa3e302ec38da20fe3a54d877`
+- Exact-tag CI: `31873242630` — both macOS packaging and macOS 26
+  `swiftbuild` jobs passed.
+- Native and forced-`swiftbuild` suites each passed 68 tests in 18 suites.
+- The release app reports `EnvLatch 0.3.0`, build `5`, architecture `arm64`,
+  Team ID `XHV8GP8YNW`, and carries the packaged `zh-Hans` strings.
+- Apple accepted ZIP submission `b62081a2-d30d-4bc3-881c-128c476536c4` and
+  DMG submission `59583136-9c5d-4c8f-94db-113e97e26aaf`.
+
+```text
+EnvLatch-0.3.0-macos-arm64.zip
+bytes=1721633
+sha256=4cd0ebc6f32d238e0852bc67e05d5ab8d79d3e1d02d19b9f7dd7fcec09041855
+
+EnvLatch-0.3.0-macos-arm64.dmg
+bytes=2091185
+sha256=a538bc993b90c63fabc3d2886e4588b8716eba1a00d06ad36a328a8fd124cf9e
+```
+
+`scripts/verify-release.sh` passed locally and again against all four assets
+freshly downloaded from the public release:
+
+```text
+archive_checksum=passed
+dmg_checksum=passed
+dmg_payloads=4
+architecture=arm64
+signature=Developer ID Application
+notarization=stapled
+gatekeeper=accepted
+isolated_install=passed
+successful_upgrade_cleanup=passed
+induced_failure_rollback=passed
+exit=0
+```
+
+The verifier compares the public ZIP and mounted DMG app with the signed source
+app, validates checksums, Developer ID signatures, stapled tickets and
+Gatekeeper, installs twice into an isolated root, rejects any successful-upgrade
+`.previous-*` residue, validates the CLI and shared agent skill, and proves
+rollback under an induced verification failure.
+
+Public release:
+https://github.com/Raylinkh/envlatch/releases/tag/v0.3.0
+
+The SwiftPM duplicate-output root cause is covered by forced-`swiftbuild` tests
+and exact-tag macOS 26 CI. Direct confirmation on the reporter's Swift 6.4
+snapshot remains pending and is not claimed by this receipt.

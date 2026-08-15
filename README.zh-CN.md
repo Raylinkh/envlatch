@@ -212,11 +212,12 @@ GitHub Actions 会运行测试、校验脚本和 Bundle 元数据、构建 App�
 
 ### 已签名并公证的发行版
 
-推荐下载 `v0.2.2` 的 arm64 DMG 或 ZIP。它们使用 Developer ID Application 证书签名，
-通过 Apple 公证并 Staple，且已通过 Gatekeeper 检查。下载 DMG 和相邻的 Checksum 后验证：
+推荐下载 [v0.3.0](https://github.com/Raylinkh/envlatch/releases/tag/v0.3.0)
+的 arm64 DMG 或 ZIP。它们使用 Developer ID Application 证书签名，通过 Apple 公证并
+Staple，且已通过 Gatekeeper 检查。下载 DMG 和相邻的 Checksum 后验证：
 
 ```sh
-shasum -a 256 -c EnvLatch-0.2.2-macos-arm64.dmg.sha256
+shasum -a 256 -c EnvLatch-0.3.0-macos-arm64.dmg.sha256
 ```
 
 DMG 内含 `EnvLatch.app`、`Install EnvLatch.command`、发行说明和 MIT License。安装器会

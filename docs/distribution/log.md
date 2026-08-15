@@ -110,3 +110,22 @@
   temporary rollback copy instead of accumulating `EnvLatch.previous-*`
   bundles.
 - Response: pending; no signed v0.3.0 binary or external community post yet.
+
+## 2026-08-15
+
+- Published the stable v0.3.0 GitHub release:
+  https://github.com/Raylinkh/envlatch/releases/tag/v0.3.0
+- Distribution artifact: public release notes, bilingual README download
+  guidance, and signed/notarized arm64 ZIP and DMG downloads with adjacent
+  SHA-256 checksums.
+- Proof:
+  - exact tag source `e36d9bd4951f00ffa3e302ec38da20fe3a54d877`;
+  - exact-tag CI run `31873242630` passed both jobs;
+  - Apple accepted ZIP submission `b62081a2-d30d-4bc3-881c-128c476536c4`;
+  - Apple accepted DMG submission `59583136-9c5d-4c8f-94db-113e97e26aaf`;
+  - all four public assets were downloaded into a fresh directory and passed
+    checksums, signing, stapling, Gatekeeper, mounted-payload comparison,
+    isolated install, successful-upgrade cleanup, agent-skill links, and
+    induced-failure rollback.
+- Response: pending; direct Swift 6.4 reporter confirmation remains open on
+  issue #1.

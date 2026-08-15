@@ -1,37 +1,38 @@
 # EnvLatch ship envelope
 
-Next release: v0.3.0
-Target: 2026-07-30
+Latest release: v0.3.0
+Shipped: 2026-08-15
 Slice: Native English and Simplified Chinese GUI with unchanged CLI and agent
 contracts, plus native Settings for language and build identity.
-Status: public source candidate `cb38e3b6fccb068c7494372cfaa4adaadd3c502e`
-passed CI run `30517468639`; signed/notarized binary not yet published.
+Status: signed and notarized arm64 DMG and ZIP published from tag source
+`e36d9bd4951f00ffa3e302ec38da20fe3a54d877`; exact-tag CI and fresh-download
+verification passed.
 
 ## Current stable release
 
 Exposure surface: https://github.com/Raylinkh/envlatch
-Target ship date: 2026-07-29
+Target ship date: 2026-08-15
 Wedge: One Mac user stores API credentials in macOS Keychain and uses one or repeated `--using <saved-key>` selectors—or one reusable key group—to launch any local command with a least-privilege environment without writing a `.env` file.
 Product contract: [SPEC.md](SPEC.md)
 Acceptance source: [VERIFICATION.md — Release verdict](VERIFICATION.md#release-verdict)
 Deferred: Cloud sync, teams, secret reveal/export, provider calls, proxying, model routing, per-agent policy, biometric-per-read, and decorative branding.
-Shipped: yes — 2026-07-29
+Shipped: yes — 2026-08-15
 
 ## Publication receipt
 
 - Public source: https://github.com/Raylinkh/envlatch
 - Signed and notarized arm64 release:
-  https://github.com/Raylinkh/envlatch/releases/tag/v0.2.2
-- v0.2.2 keeps the provider-aware dashboard, bundled real provider marks,
-  editable presets, searchable key cards, and same-view key groups already
-  verified on public `main`, and prevents agents from treating a
-  sandbox-hidden Keychain query as proof of an empty vault.
-- Public CI run `30422058632` passed on exact tag source
-  `11de3c4aca5af087fc02f53379ede4153c07f061`.
-- Apple accepted ZIP submission `56b28a30-b222-41a7-ae08-e7e8a156b2d2`
-  and DMG submission `8d43911d-5943-4678-831c-7def604a2855`.
+  https://github.com/Raylinkh/envlatch/releases/tag/v0.3.0
+- v0.3.0 adds native English/Simplified Chinese UI, native language and build
+  Settings, SwiftPM `swiftbuild` localization compatibility, and successful
+  upgrade-backup cleanup without changing CLI or Keychain contracts.
+- Public CI run `31873242630` passed on exact tag source
+  `e36d9bd4951f00ffa3e302ec38da20fe3a54d877`.
+- Apple accepted ZIP submission `b62081a2-d30d-4bc3-881c-128c476536c4`
+  and DMG submission `59583136-9c5d-4c8f-94db-113e97e26aaf`.
 - All four public assets were downloaded into a fresh directory and passed
   checksum, signature, stapling, Gatekeeper, mounted-payload,
-  isolated-install, agent-skill-link, and rollback verification.
+  isolated-install, repeated-upgrade cleanup, agent-skill-link, and rollback
+  verification.
 - GitHub private vulnerability reporting enabled.
 - The explicitly named v0.2.0 unsigned DMG remains a legacy preview.
