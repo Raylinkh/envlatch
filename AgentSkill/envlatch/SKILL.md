@@ -37,3 +37,11 @@ envlatch groups create "<group-name>" --using <saved-key-name> --using <saved-ke
 - Treat the launched program and every descendant as able to read every value selected by that key or key group.
 - A `--using` launch exposes only its complete validated selection under saved names and configured client bindings. Repeated saved-key selections are validated together before any value is read. A broad launch without `--using` exposes every saved key.
 - Ask the user to add or rotate a missing value in the EnvLatch GUI; do not solicit the plaintext in chat.
+
+## Native line-oriented credential prompts
+
+- EnvLatch preserves saved UTF-8 values, including whitespace and line breaks. It does not redact child output. A saved name ending in `_CREDENTIAL` does not encode or transform the value.
+- For fields whose recipient contract is a single line, such as `notarytool` Apple ID, team ID and app-specific password, use a selected-key child adapter to trim outer pasted whitespace and refuse empty or embedded CR/LF before submission. Do not apply this rule to arbitrary secrets whose whitespace may be meaningful, and do not rewrite the vault.
+- Feed these values only to the recipient's native prompts. Disable terminal capture before the first credential entry; retain only status or normalization counts, never values, lengths or secret-derived hashes. Preserve the exact program, authentication validation and selected-key scope.
+- Qualify prompt transport with public dummy byte receipts on the actual terminal path. A sandbox `/dev/tty` denial can make libc `getpass` fall back to stdin; that is setup evidence and does not qualify secure terminal behavior. Native prompt timing is distinct from notarytool's undocumented internals.
+- An HTTP 401 is not proof that the stored password is wrong. Check the exercised input boundary before requesting rotation. The Selenar alternate-account case had one outer-whitespace normalization and then successful profile creation and fresh Apple authentication; its specific normalized field was not inspected. [Verified account and input record](/Users/kehualin/Documents/projects/onyourfeet/docs/release/2026-10-05-gumroad-publication.md).
