@@ -1,6 +1,8 @@
 ---
 name: envlatch
 description: Run local commands with API keys stored in EnvLatch instead of copying credentials between .env files or shell profiles. Use when an agent, CLI, script, SDK, test, or build needs a saved credential environment variable on macOS.
+metadata:
+  version: "2026.10.07"
 ---
 
 # EnvLatch
@@ -37,6 +39,7 @@ envlatch groups create "<group-name>" --using <saved-key-name> --using <saved-ke
 - Treat the launched program and every descendant as able to read every value selected by that key or key group.
 - A `--using` launch exposes only its complete validated selection under saved names and configured client bindings. Repeated saved-key selections are validated together before any value is read. A broad launch without `--using` exposes every saved key.
 - Ask the user to add or rotate a missing value in the EnvLatch GUI; do not solicit the plaintext in chat.
+- For an HTTP authorization header, reject CR/LF and unsupported control characters in the consumer before transport, using a constant diagnostic. Some header-validation exceptions contain the entire credential value; catching and logging that exception can leak it. Do not normalize the vault value or apply this single-line restriction to unrelated secrets. [Verified Python boundary](references/http-header-diagnostics.md).
 
 ## Native line-oriented credential prompts
 
