@@ -1,0 +1,81 @@
+{
+  "scope": "draft source candidate; synthetic credentials only",
+  "source_checkpoint": "5d9384f1dcfc26a2646f73300df43e4b21d7d678",
+  "draft_pr": "https://github.com/Raylinkh/envlatch/pull/3",
+  "full_suite": {
+    "command": "swift test --no-parallel",
+    "exit": 0,
+    "tests": 105,
+    "suites": 24,
+    "native_opt_in_probes": "explicitly skipped here; executed separately below"
+  },
+  "terminal": {
+    "exit": 0,
+    "checks": 7,
+    "all_exits_zero": true,
+    "proof": "real controlling tty full fingerprint and exact operation approval/cancel; detached CLI preflight refusal",
+    "limit": "terminal helper is real; positive CLI send plus two-device Keychain transfer uses separate Core proof"
+  },
+  "two_mac": {
+    "exit": 0,
+    "operation": "4aa2f14b-2fdb-4266-89eb-3a2228110f69",
+    "source_helper_manifest": "b810bdbbea746b1a026cf19ed9b6f1debc77c21d575c07d3c1c0a6ab0661444b",
+    "manifest_files": 86,
+    "source": {
+      "source_manifest": "b810bdbbea746b1a026cf19ed9b6f1debc77c21d575c07d3c1c0a6ab0661444b",
+      "file_count": 86,
+      "architecture": "arm64",
+      "macos": "26.4.1",
+      "swift": "Apple Swift version 6.3.1 (swiftlang-6.3.1.1.2 clang-2100.0.123.102)\nTarget: arm64-apple-macosx26.0"
+    },
+    "target": {
+      "source_manifest": "b810bdbbea746b1a026cf19ed9b6f1debc77c21d575c07d3c1c0a6ab0661444b",
+      "file_count": 86,
+      "architecture": "arm64",
+      "macos": "26.5.1",
+      "swift": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx26.0"
+    },
+    "stage_exits": {
+      "source-identity": 0,
+      "target-identity": 0,
+      "source-seed": 0,
+      "first-transfer-source": 0,
+      "first-transfer-target": 0,
+      "source-unchanged": 0,
+      "committed-reconnect-source": 0,
+      "committed-reconnect-target": 0,
+      "source-unchanged-after-reconnect": 0,
+      "target-cleanup": 0,
+      "source-cleanup": 0,
+      "source-public-metadata-scan": 0,
+      "target-public-metadata-scan": 0
+    },
+    "success": true,
+    "target_selected_exact": true,
+    "target_unselected_absent": true,
+    "source_unchanged": true,
+    "committed_reconnect_status_only": true,
+    "global_keychain_default_and_searchlist_unchanged": true,
+    "synthetic_keychains_deleted": true,
+    "no_synthetic_value_in_logs": true,
+    "owned_processes_inactive": true,
+    "proof": "Core TransferSession, real TCP authenticated HPKE, isolated encrypted file Keychain and selected-key child",
+    "consent": "injected exact-binding test consent; production tty approval is separate"
+  },
+  "limits": {
+    "studio_default_keychain_ssh_identity_osstatus": -25308,
+    "studio_default_keychain_acceptance": false,
+    "installed_signed_cli_gui_acceptance": false,
+    "real_credentials_used": false,
+    "atomic_group_key_namespace_across_processes": false,
+    "release_performed": false
+  },
+  "final_qualification": {
+    "surface": "https://github.com/Raylinkh/envlatch/pull/3",
+    "required": [
+      "independent exact-head Opus review",
+      "green existing CI"
+    ],
+    "release_owner": "Ray"
+  }
+}
