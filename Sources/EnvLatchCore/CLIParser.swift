@@ -7,6 +7,7 @@ public enum CLICommand: Equatable, Sendable {
     case doctor
     case version
     case pair(name: String)
+    case transfer(TransferCommand)
     case run(selections: [String]?, program: String, arguments: [String])
     case help
 }
@@ -21,11 +22,12 @@ public enum CLIParseError: Error, Equatable, LocalizedError, Sendable {
     case missingProfile
     case missingRunSeparator
     case missingProgram
+    case invalidTransfer
 
     public var errorDescription: String? {
         switch self {
         case .missingCommand:
-            "Choose pair, list, groups, doctor, run, or help."
+            "Choose pair, list, groups, doctor, run, transfer, or help."
         case .unknownCommand(let command):
             "Unknown command: \(command)"
         case .unexpectedArguments(let command):
@@ -42,6 +44,8 @@ public enum CLIParseError: Error, Equatable, LocalizedError, Sendable {
             "Use `envlatch run -- <program> [args...]`."
         case .missingProgram:
             "Provide a program after `run --`."
+        case .invalidTransfer:
+            "Use `envlatch help` for transfer identity, trust, receive, send, and status syntax."
         }
     }
 }
@@ -86,6 +90,8 @@ public enum CLIParser {
                 throw CLIParseError.missingPairName
             }
             return .pair(name: arguments.dropFirst().joined(separator: " "))
+        case "transfer":
+            return .transfer(try TransferCommand.parse(Array(arguments.dropFirst())))
         case "run":
             guard let separatorIndex = arguments.dropFirst().firstIndex(of: "--") else {
                 throw CLIParseError.missingRunSeparator

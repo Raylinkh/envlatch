@@ -1,0 +1,108 @@
+{
+  "scope": "draft source candidate; synthetic credentials only",
+  "source_checkpoint": "5d9384f1dcfc26a2646f73300df43e4b21d7d678",
+  "draft_pr": "https://github.com/Raylinkh/envlatch/pull/3",
+  "full_suite": {
+    "command": "swift test --no-parallel",
+    "exit": 0,
+    "tests": 105,
+    "suites": 24,
+    "native_opt_in_probes": "explicitly skipped here; executed separately below"
+  },
+  "terminal": {
+    "exit": 0,
+    "checks": 7,
+    "all_exits_zero": true,
+    "proof": "real controlling tty full fingerprint and exact operation approval/cancel; detached CLI preflight refusal",
+    "limit": "terminal helper is real; positive CLI send plus two-device Keychain transfer uses separate Core proof"
+  },
+  "two_mac": {
+    "exit": 0,
+    "operation": "4aa2f14b-2fdb-4266-89eb-3a2228110f69",
+    "source_helper_manifest": "b810bdbbea746b1a026cf19ed9b6f1debc77c21d575c07d3c1c0a6ab0661444b",
+    "manifest_files": 86,
+    "source": {
+      "source_manifest": "b810bdbbea746b1a026cf19ed9b6f1debc77c21d575c07d3c1c0a6ab0661444b",
+      "file_count": 86,
+      "architecture": "arm64",
+      "macos": "26.4.1",
+      "swift": "Apple Swift version 6.3.1 (swiftlang-6.3.1.1.2 clang-2100.0.123.102)\nTarget: arm64-apple-macosx26.0"
+    },
+    "target": {
+      "source_manifest": "b810bdbbea746b1a026cf19ed9b6f1debc77c21d575c07d3c1c0a6ab0661444b",
+      "file_count": 86,
+      "architecture": "arm64",
+      "macos": "26.5.1",
+      "swift": "Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)\nTarget: arm64-apple-macosx26.0"
+    },
+    "stage_exits": {
+      "source-identity": 0,
+      "target-identity": 0,
+      "source-seed": 0,
+      "first-transfer-source": 0,
+      "first-transfer-target": 0,
+      "source-unchanged": 0,
+      "committed-reconnect-source": 0,
+      "committed-reconnect-target": 0,
+      "source-unchanged-after-reconnect": 0,
+      "target-cleanup": 0,
+      "source-cleanup": 0,
+      "source-public-metadata-scan": 0,
+      "target-public-metadata-scan": 0
+    },
+    "success": true,
+    "target_selected_exact": true,
+    "target_unselected_absent": true,
+    "source_unchanged": true,
+    "committed_reconnect_status_only": true,
+    "global_keychain_default_and_searchlist_unchanged": true,
+    "synthetic_keychains_deleted": true,
+    "no_synthetic_value_in_logs": true,
+    "owned_processes_inactive": true,
+    "proof": "Core TransferSession, real TCP authenticated HPKE, isolated encrypted file Keychain and selected-key child",
+    "consent": "injected exact-binding test consent; production tty approval is separate"
+  },
+  "limits": {
+    "studio_default_keychain_ssh_identity_osstatus": -25308,
+    "studio_default_keychain_acceptance": false,
+    "installed_signed_cli_gui_acceptance": false,
+    "real_credentials_used": false,
+    "atomic_group_key_namespace_across_processes": false,
+    "release_performed": false
+  },
+  "final_qualification": {
+    "surface": "https://github.com/Raylinkh/envlatch/pull/3",
+    "required": [
+      "independent exact-head Opus review",
+      "green existing CI"
+    ],
+    "release_owner": "Ray",
+    "opus": {
+      "state": "blocked_session_quota",
+      "verdict": null,
+      "model": "claude-opus-5-5",
+      "session_id": "d1015fbd-098c-4c0c-a4fd-daa7f5deae17",
+      "attempted_head": "177d235c70c446613f87a0abb894cc49faa364bd",
+      "same_session_continuation": "same quota error",
+      "reported_reset": "04:00 Asia/Singapore",
+      "permissions_override": false
+    },
+    "ci_prior_disposition_head": {
+      "head": "177d235c70c446613f87a0abb894cc49faa364bd",
+      "result": "success",
+      "runs": [
+        "https://github.com/Raylinkh/envlatch/actions/runs/39628518187",
+        "https://github.com/Raylinkh/envlatch/actions/runs/39628527344"
+      ]
+    }
+  },
+  "cleanup": {
+    "remote_before_bytes": 259136028,
+    "remote_removed_cache_bytes": 258657644,
+    "remote_after_bytes": 478384,
+    "local_disposable_probe_removed_bytes": 1130640,
+    "local_primary_cache_retained": "288 MB",
+    "owned_processes_inactive": true,
+    "retained": "source, Git history, primary cache and non-secret receipts"
+  }
+}

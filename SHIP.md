@@ -10,6 +10,11 @@ verification passed.
 
 ## Current stable release
 
+Source work in progress: [paired Mac selected-key copy](docs/features/paired-key-transfer/STATUS.md),
+authorized through a draft PR and synthetic two-Mac verification on 2026-10-21.
+This does not change the stable release below. No transfer release, tag, signing,
+notarization or installed-app update is authorized; Ray holds release.
+
 Exposure surface: https://github.com/Raylinkh/envlatch
 Target ship date: 2026-08-15
 Wedge: One Mac user stores API credentials in macOS Keychain and uses one or repeated `--using <saved-key>` selectors—or one reusable key group—to launch any local command with a least-privilege environment without writing a `.env` file.

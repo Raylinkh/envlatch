@@ -129,3 +129,10 @@
     induced-failure rollback.
 - Response: pending; direct Swift 6.4 reporter confirmation remains open on
   issue #1.
+
+## 2026-10-21
+
+- Distribution artifact: [paired Mac transfer draft PR #3](https://github.com/Raylinkh/envlatch/pull/3) with source contract, CLI sequence and non-secret synthetic two-Mac proof.
+- This is a source preview for review; stable v0.3.0 downloads are unchanged. No social post, tag, release, notarization or installed-app update was made.
+- Independent and coordinator checks passed: 105 tests / 24 suites; seven real terminal checks; actual tailnet transfer into an isolated encrypted Studio Keychain, selected-key child and committed reconnect. Final exact-head Opus/CI qualification is recorded on the PR.
+- Remaining boundary: Studio default-Keychain identity creation over SSH was denied (-25308); positive installed/signed CLI and GUI acceptance remains unverified.

@@ -107,6 +107,25 @@ public struct CLIApplication {
                 stdout("shared_skill=\(inspector.sharedSkillURL.path)")
                 stdout("next=envlatch doctor")
                 return 0
+            case .transfer(let command):
+                guard #available(macOS 14.0, *) else {
+                    stderr("error: Paired key transfer requires macOS 14 or later.")
+                    return 1
+                }
+                guard let transferStore = store as? any TransferSecretStore else {
+                    stderr("error: The selected store does not support create-only transfer.")
+                    return 1
+                }
+                do {
+                    return try TransferCLI(secrets: transferStore, groups: launchProfileStore, output: stdout).run(command)
+                } catch let error as TransferError {
+                    stderr("error: \(error.localizedDescription)")
+                    return error == .outcomeUnknown ? 2 : 1
+                } catch {
+                    // Never surface decoder, crypto, store or transport errors containing payloads.
+                    stderr("error: Transfer stopped. Check operation status before another action.")
+                    return 2
+                }
             case .run(let selections, let program, let programArguments):
                 let plan = try prepareRun(
                     selections: selections,
@@ -204,6 +223,11 @@ public struct CLIApplication {
       envlatch doctor
       envlatch version
       envlatch pair <agent-or-host-name>
+      envlatch transfer identity
+      envlatch transfer trust <peer> --public-key <public-base64> --address <tailnet-ip> [--port 49271]
+      envlatch transfer receive --peer <peer> --using <saved-key> --operation <UUID> --bind <local-tailnet-ip> [--port 49271]
+      envlatch transfer send --peer <peer> --using <saved-key> --operation <UUID>
+      envlatch transfer status --peer <peer> --using <saved-key> --operation <UUID>
       envlatch help
 
     Preferred least privilege:
