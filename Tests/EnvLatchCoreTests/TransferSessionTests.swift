@@ -168,6 +168,53 @@ struct TransferSessionTests {
         #expect(fixture.targetStore.createCount == 0)
         #expect(!fixture.framesContainSentinel)
     }
+
+    @available(macOS 14.0, *)
+    @Test func authenticatedInterceptionPositiveControlStillCommits() throws {
+        let fixture = try TransferFixture()
+        defer { fixture.cleanup() }
+        let ready = TransferAuthenticatedRewrite(sender: fixture.targetIdentity, recipient: fixture.sourceIdentity, kind: .ready)
+        let delivery = TransferAuthenticatedRewrite(sender: fixture.sourceIdentity, recipient: fixture.targetIdentity, kind: .delivery)
+        let result = fixture.exchange(rewriteSource: delivery.rewrite, rewriteTarget: ready.rewrite)
+        #expect(try result.source.get().state == .committed)
+        #expect(try result.target.get().state == .committed)
+        #expect(ready.intercepted == 1)
+        #expect(delivery.intercepted == 1)
+        #expect(fixture.sourceStore.loadCount == 1)
+        #expect(fixture.targetStore.createCount == 1)
+    }
+
+    @available(macOS 14.0, *)
+    @Test(arguments: ["sourceNonce", "operation", "target"])
+    func authenticatedWrongReadyBindingNeverLoadsSource(field: String) throws {
+        let fixture = try TransferFixture()
+        defer { fixture.cleanup() }
+        let rewrite = TransferAuthenticatedRewrite(sender: fixture.targetIdentity, recipient: fixture.sourceIdentity,
+            kind: .ready, field: field)
+        let result = fixture.exchange(rewriteTarget: rewrite.rewrite)
+        #expect(rewrite.intercepted == 1)
+        #expect(result.source.hasError(.protocolViolation))
+        #expect(fixture.sourceStore.loadCount == 0)
+        #expect(fixture.targetStore.createCount == 0)
+        #expect(try fixture.targetMetadata.status(binding: fixture.binding)?.status == "unknown")
+    }
+
+    @available(macOS 14.0, *)
+    @Test(arguments: ["sourceNonce", "targetNonce", "operation", "target"])
+    func authenticatedWrongDeliveryBindingNeverCreatesTarget(field: String) throws {
+        let fixture = try TransferFixture()
+        defer { fixture.cleanup() }
+        let rewrite = TransferAuthenticatedRewrite(sender: fixture.sourceIdentity, recipient: fixture.targetIdentity,
+            kind: .delivery, field: field)
+        let result = fixture.exchange(rewriteSource: rewrite.rewrite)
+        #expect(rewrite.intercepted == 1)
+        #expect(result.target.hasError(.protocolViolation))
+        #expect(result.source.hasError(.outcomeUnknown))
+        #expect(fixture.sourceStore.loadCount == 1)
+        #expect(fixture.targetStore.createCount == 0)
+        #expect(!fixture.targetStore.has(name: fixture.name))
+        #expect(try fixture.targetMetadata.status(binding: fixture.binding)?.status == "unknown")
+    }
 }
 
 @available(macOS 14.0, *)
@@ -216,7 +263,9 @@ private final class TransferFixture: @unchecked Sendable {
     }
 
     func exchange(targetBinding: TransferBinding? = nil, sourceFailSend: Int? = nil,
-                  targetFailSend: Int? = nil, tamperSourceSend: Int? = nil) -> TransferExchangeResult {
+                  targetFailSend: Int? = nil, tamperSourceSend: Int? = nil,
+                  rewriteSource: ((Data) throws -> Data)? = nil,
+                  rewriteTarget: ((Data) throws -> Data)? = nil) -> TransferExchangeResult {
         let sourceSession = TransferSession(identity: sourceIdentity, peer: targetPeer,
             metadata: sourceMetadata, secrets: sourceStore, consent: sourceConsents.consent)
         let targetSession = TransferSession(identity: targetIdentity, peer: sourcePeer,
@@ -226,9 +275,9 @@ private final class TransferFixture: @unchecked Sendable {
         let sourceInbox = TransferMailbox()
         let targetInbox = TransferMailbox()
         let sourceWire = TransferMemoryConnection(incoming: sourceInbox, outgoing: targetInbox,
-            failSend: sourceFailSend, tamperSend: tamperSourceSend)
+            failSend: sourceFailSend, tamperSend: tamperSourceSend, rewrite: rewriteSource)
         let targetWire = TransferMemoryConnection(incoming: targetInbox, outgoing: sourceInbox,
-            failSend: targetFailSend)
+            failSend: targetFailSend, rewrite: rewriteTarget)
         let result = TransferResultBox()
         let action = TransferThreadAction {
             let outcome = Result { try targetSession.receive(binding: targetBinding ?? self.binding, connection: targetWire) }
@@ -251,6 +300,10 @@ private struct TransferExchangeResult {
 
 private extension Result {
     var isFailure: Bool { if case .failure = self { return true }; return false }
+    func hasError(_ expected: TransferError) -> Bool {
+        if case .failure(let error) = self { return error as? TransferError == expected }
+        return false
+    }
 }
 
 private final class TransferThreadAction: @unchecked Sendable {
@@ -286,10 +339,13 @@ private final class TransferMemoryConnection: TransferConnection, @unchecked Sen
     let outgoing: TransferMailbox
     let failSend: Int?
     let tamperSend: Int?
+    let rewrite: ((Data) throws -> Data)?
     private(set) var sentFrames: [Data] = []
-    init(incoming: TransferMailbox, outgoing: TransferMailbox, failSend: Int? = nil, tamperSend: Int? = nil) {
+    init(incoming: TransferMailbox, outgoing: TransferMailbox, failSend: Int? = nil,
+         tamperSend: Int? = nil, rewrite: ((Data) throws -> Data)? = nil) {
         self.incoming = incoming; self.outgoing = outgoing
         self.failSend = failSend; self.tamperSend = tamperSend
+        self.rewrite = rewrite
     }
     func send(_ frame: Data) throws {
         let index = sentFrames.count + 1
@@ -297,6 +353,7 @@ private final class TransferMemoryConnection: TransferConnection, @unchecked Sen
         if failSend == index { throw TransferError.transport }
         var delivered = frame
         if tamperSend == index, !delivered.isEmpty { delivered[delivered.count / 2] ^= 1 }
+        if let rewrite { delivered = try rewrite(delivered) }
         outgoing.condition.lock()
         defer { outgoing.condition.unlock() }
         guard !outgoing.closed else { throw TransferError.transport }
@@ -318,6 +375,59 @@ private final class TransferMemoryConnection: TransferConnection, @unchecked Sen
             mailbox.condition.lock(); mailbox.closed = true
             mailbox.condition.broadcast(); mailbox.condition.unlock()
         }
+    }
+}
+
+@available(macOS 14.0, *)
+private final class TransferAuthenticatedRewrite: @unchecked Sendable {
+    enum Kind { case ready, delivery }
+    private let sender: TransferIdentity
+    private let recipient: TransferIdentity
+    private let kind: Kind
+    private let field: String?
+    private(set) var intercepted = 0
+
+    init(sender: TransferIdentity, recipient: TransferIdentity, kind: Kind, field: String? = nil) {
+        self.sender = sender; self.recipient = recipient; self.kind = kind; self.field = field
+    }
+
+    func rewrite(_ bytes: Data) throws -> Data {
+        let context = Data("EnvLatch paired-key-transfer v1 / authenticated HPKE".utf8)
+        let envelope = try JSONDecoder().decode(TransferEnvelope.self, from: bytes)
+        let senderPublic = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: sender.publicKey)
+        var opening = try HPKE.Recipient(privateKey: recipient.privateKey,
+            ciphersuite: .Curve25519_SHA256_ChachaPoly, info: context,
+            encapsulatedKey: envelope.encapsulatedKey, authenticatedBy: senderPublic)
+        let original = try JSONDecoder().decode(TransferMessage.self, from: opening.open(envelope.ciphertext))
+        let message: TransferMessage
+        switch (kind, original) {
+        case (.ready, .ready(let binding, let sourceNonce, let targetNonce)):
+            intercepted += 1
+            message = .ready(try altered(binding), sourceNonce: field == "sourceNonce" ? changed(sourceNonce) : sourceNonce,
+                targetNonce: targetNonce)
+        case (.delivery, .delivery(let binding, let sourceNonce, let targetNonce, let value)):
+            intercepted += 1
+            message = .delivery(try altered(binding), sourceNonce: field == "sourceNonce" ? changed(sourceNonce) : sourceNonce,
+                targetNonce: field == "targetNonce" ? changed(targetNonce) : targetNonce, value: value)
+        default: return bytes
+        }
+        let recipientPublic = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: recipient.publicKey)
+        var sealing = try HPKE.Sender(recipientKey: recipientPublic,
+            ciphersuite: .Curve25519_SHA256_ChachaPoly, info: context, authenticatedBy: sender.privateKey)
+        let ciphertext = try sealing.seal(JSONEncoder().encode(message))
+        return try JSONEncoder().encode(TransferEnvelope(encapsulatedKey: sealing.encapsulatedKey, ciphertext: ciphertext))
+    }
+
+    private func altered(_ binding: TransferBinding) throws -> TransferBinding {
+        try TransferBinding(operationID: field == "operation" ? UUID() : binding.operationID,
+            credentialName: binding.credentialName, sourceFingerprint: binding.sourceFingerprint,
+            targetFingerprint: field == "target" ? TransferIdentity().fingerprint : binding.targetFingerprint)
+    }
+
+    private func changed(_ data: Data) -> Data {
+        var changed = data
+        changed[0] ^= 1
+        return changed
     }
 }
 

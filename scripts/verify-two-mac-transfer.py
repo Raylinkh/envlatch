@@ -31,13 +31,13 @@ def main():
     args.evidence.mkdir(parents=True, exist_ok=False, mode=0o700)
     local_root = args.evidence / "local-public-metadata"
     local_root.mkdir(mode=0o700)
-    remote_metadata = args.remote_root + "/acceptance-public-metadata"
+    remote_metadata = args.remote_root + "/acceptance-" + args.run_id
     base = {
         "ENVLATCH_TRANSFER_ACCEPTANCE_RUN_ID": args.run_id,
         "ENVLATCH_TRANSFER_ACCEPTANCE_OPERATION": args.operation,
         "ENVLATCH_TRANSFER_ACCEPTANCE_PORT": str(args.port),
     }
-    command = ["swift", "test", "--skip-build", "--no-parallel", "--filter", "nativeTransferAcceptance"]
+    command = [".build/transfer-acceptance"]
     receipts = []
     process_ids = {False: set(), True: set()}
 
@@ -86,6 +86,9 @@ print(json.dumps({'source_manifest':identity,'file_count':len(manifest),'archite
         remember_processes(path.read_text(), remote)
         if result.returncode:
             raise RuntimeError(stage + " failed; inspect its nonsecret log")
+        for name in ["native_default_keychain_unchanged", "native_searchlist_unchanged"]:
+            if field(path.read_text(), name) != "true":
+                raise RuntimeError(stage + " changed Keychain authority")
         return path.read_text()
 
     def field(output, name):
@@ -148,20 +151,25 @@ print(json.dumps({'source_manifest':identity,'file_count':len(manifest),'archite
         run("source-unchanged", "verify")
         exchange("committed-reconnect", source_public, target_public)
         run("source-unchanged-after-reconnect", "verify")
-        for stage, remote in [("source-public-metadata-scan", False), ("target-public-metadata-scan", True)]:
-            output = run(stage, "scan", remote=remote)
-            for name in ["native_no_synthetic_value_in_public_metadata", "native_no_unexpected_staging_files"]:
-                if field(output, name) != "true":
-                    raise RuntimeError("public metadata scan failed")
     except Exception as error:
         failure = str(error)
     finally:
         for stage, remote in [("target-cleanup", True), ("source-cleanup", False)]:
             try:
-                run(stage, "cleanup", remote=remote)
+                output = run(stage, "cleanup", remote=remote)
+                if field(output, "native_isolated_keychain_deleted") != "true":
+                    raise RuntimeError("isolated Keychain cleanup unproved")
             except Exception as error:
                 failure = (failure + "; " if failure else "") + str(error)
-        sentinel_source = Path("Tests/EnvLatchCoreTests/TransferNativeAcceptanceTests.swift").read_text()
+        for stage, remote in [("source-public-metadata-scan", False), ("target-public-metadata-scan", True)]:
+            try:
+                output = run(stage, "scan", remote=remote)
+                for name in ["native_no_synthetic_value_in_public_metadata", "native_no_unexpected_staging_files"]:
+                    if field(output, name) != "true":
+                        raise RuntimeError("public metadata scan failed")
+            except Exception as error:
+                failure = (failure + "; " if failure else "") + str(error)
+        sentinel_source = Path("Tests/EnvLatchCoreTests/NativeTransferAcceptanceHarness.swift").read_text()
         sentinel = re.search(r'private static let syntheticSentinel = "([^"\n]+)"', sentinel_source).group(1).encode()
         no_value_in_logs = all(sentinel not in path.read_bytes() for path in args.evidence.glob("*.log"))
         if not no_value_in_logs:
@@ -186,8 +194,9 @@ print(json.dumps({'owned_processes_inactive':not live,'live_owned_pids':live}))
         result = {"run_id": args.run_id, "operation": args.operation, "receipts": receipts,
                   "candidate_platforms": identities, "no_synthetic_value_in_logs": no_value_in_logs,
                   "owned_process_quiescence": quiescence,
-                  "proof": "Core TransferSession, real TCP authenticated HPKE, isolated Keychain and selected-key child",
+                  "proof": "Core TransferSession, real TCP authenticated HPKE, isolated encrypted file Keychain and selected-key child",
                   "consent": "injected exact-binding test consent; production tty approval is separate",
+                  "limit": "Studio default-Keychain SSH identity creation returned -25308; default GUI and signed app acceptance remain unverified",
                   "success": failure is None, "failure": failure}
         (args.evidence / "result.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"success": failure is None, "result": str(args.evidence / "result.json"), "failure": failure}))

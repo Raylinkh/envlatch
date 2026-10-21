@@ -18,7 +18,7 @@ def main():
     parser.add_argument("--evidence", type=Path, required=True)
     args = parser.parse_args()
     args.evidence.mkdir(parents=True, mode=0o700, exist_ok=False)
-    command = ["swift", "test", "--skip-build", "--no-parallel", "--filter", "terminalConsentNative"]
+    command = [".build/transfer-acceptance"]
     receipts = []
     environment = dict(os.environ, ENVLATCH_TRANSFER_TERMINAL_TEST="no-tty")
     no_tty = subprocess.run(command, env=environment, capture_output=True, start_new_session=True, timeout=20)
