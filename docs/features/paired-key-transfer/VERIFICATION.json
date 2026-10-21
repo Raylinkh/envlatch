@@ -76,6 +76,33 @@
       "independent exact-head Opus review",
       "green existing CI"
     ],
-    "release_owner": "Ray"
+    "release_owner": "Ray",
+    "opus": {
+      "state": "blocked_session_quota",
+      "verdict": null,
+      "model": "claude-opus-5-5",
+      "session_id": "d1015fbd-098c-4c0c-a4fd-daa7f5deae17",
+      "attempted_head": "177d235c70c446613f87a0abb894cc49faa364bd",
+      "same_session_continuation": "same quota error",
+      "reported_reset": "04:00 Asia/Singapore",
+      "permissions_override": false
+    },
+    "ci_prior_disposition_head": {
+      "head": "177d235c70c446613f87a0abb894cc49faa364bd",
+      "result": "success",
+      "runs": [
+        "https://github.com/Raylinkh/envlatch/actions/runs/39628518187",
+        "https://github.com/Raylinkh/envlatch/actions/runs/39628527344"
+      ]
+    }
+  },
+  "cleanup": {
+    "remote_before_bytes": 259136028,
+    "remote_removed_cache_bytes": 258657644,
+    "remote_after_bytes": 478384,
+    "local_disposable_probe_removed_bytes": 1130640,
+    "local_primary_cache_retained": "288 MB",
+    "owned_processes_inactive": true,
+    "retained": "source, Git history, primary cache and non-secret receipts"
   }
 }
