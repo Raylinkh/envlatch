@@ -15,6 +15,7 @@ struct TransferNativeAcceptanceTests {
     func nativeTransferAcceptance() throws {
         let environment = ProcessInfo.processInfo.environment
         let mode = try #require(environment["ENVLATCH_TRANSFER_ACCEPTANCE_MODE"])
+        print("native_pid=\(getpid())")
         let runID = try #require(environment["ENVLATCH_TRANSFER_ACCEPTANCE_RUN_ID"])
         _ = try #require(UUID(uuidString: runID))
         let rootPath = try #require(environment["ENVLATCH_TRANSFER_ACCEPTANCE_ROOT"])
@@ -25,12 +26,33 @@ struct TransferNativeAcceptanceTests {
         let store = KeychainSecretStore(service: service)
         let identityStore = KeychainTransferIdentityStore(service: service + ".identity")
 
+        if mode == "scan" {
+            let files = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey])
+            var noValue = true
+            var noStaging = true
+            if let files {
+                for case let file as URL in files {
+                    if try file.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true {
+                        let bytes = try Data(contentsOf: file)
+                        noValue = noValue && bytes.range(of: Data(Self.syntheticSentinel.utf8)) == nil
+                        noStaging = noStaging && file.pathExtension == "json"
+                    }
+                }
+            }
+            #expect(noValue)
+            #expect(noStaging)
+            print("native_no_synthetic_value_in_public_metadata=\(noValue)")
+            print("native_no_unexpected_staging_files=\(noStaging)")
+            return
+        }
+
         if mode == "cleanup" {
             try store.delete(name: name)
             try store.delete(name: unselected)
             try KeychainSecretStore(service: service + ".identity")
                 .delete(name: CredentialName(validating: "ENVLATCH_TRANSFER_PRIVATE_KEY"))
             #expect(try store.listNames().isEmpty)
+            #expect(try KeychainSecretStore(service: service + ".identity").listNames().isEmpty)
             print("native_cleanup=empty_owned_namespace")
             return
         }
@@ -151,6 +173,7 @@ struct TransferNativeAcceptanceTests {
         var status: Int32 = 0
         #expect(waitpid(child, &status, 0) == child)
         #expect(status == 0)
+        print("native_reaped_child_pid=\(child)")
         let output = String(decoding: receipt, as: UTF8.self)
         #expect(output.contains("native_selected_exact=true"))
         #expect(output.contains("native_unselected_absent=true"))
