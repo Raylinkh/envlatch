@@ -126,40 +126,40 @@ public enum TransferTerminalConsent {
         return try approve(prompt: prompt, expected: operation)
     }
 
-private static func approve(prompt: String, expected: String) throws -> Bool {
-    let descriptor = open("/dev/tty", O_RDWR | O_NOCTTY | O_CLOEXEC)
-    guard descriptor >= 0, isatty(descriptor) == 1 else {
-        if descriptor >= 0 { _ = Darwin.close(descriptor) }
-        throw TransferError.consentRequired
-    }
-    defer { _ = Darwin.close(descriptor) }
-    let promptData = Data(prompt.utf8)
-    try promptData.withUnsafeBytes { bytes in
-        var offset = 0
-        while offset < bytes.count {
-            let count = Darwin.write(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
-            if count < 0, errno == EINTR { continue }
-            guard count > 0 else { throw TransferError.consentRequired }
-            offset += count
+    private static func approve(prompt: String, expected: String) throws -> Bool {
+        let descriptor = open("/dev/tty", O_RDWR | O_NOCTTY | O_CLOEXEC)
+        guard descriptor >= 0, isatty(descriptor) == 1 else {
+            if descriptor >= 0 { _ = Darwin.close(descriptor) }
+            throw TransferError.consentRequired
         }
+        defer { _ = Darwin.close(descriptor) }
+        let promptData = Data(prompt.utf8)
+        try promptData.withUnsafeBytes { bytes in
+            var offset = 0
+            while offset < bytes.count {
+                let count = Darwin.write(descriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                if count < 0, errno == EINTR { continue }
+                guard count > 0 else { throw TransferError.consentRequired }
+                offset += count
+            }
+        }
+        var answer: [UInt8] = []
+        let deadline = DispatchTime.now().uptimeNanoseconds + 120_000_000_000
+        while answer.count <= 128 {
+            let now = DispatchTime.now().uptimeNanoseconds
+            guard now < deadline else { throw TransferError.timeout }
+            var pollDescriptor = pollfd(fd: descriptor, events: Int16(POLLIN), revents: 0)
+            let remaining = Int32((deadline - now) / 1_000_000 + 1)
+            let ready = poll(&pollDescriptor, 1, remaining)
+            if ready < 0, errno == EINTR { continue }
+            guard ready > 0 else { throw TransferError.timeout }
+            var byte: UInt8 = 0
+            let count = Darwin.read(descriptor, &byte, 1)
+            if count < 0, errno == EINTR { continue }
+            guard count == 1 else { throw TransferError.consentRequired }
+            if byte == 10 || byte == 13 { return String(bytes: answer, encoding: .utf8) == expected }
+            answer.append(byte)
+        }
+        return false
     }
-    var answer: [UInt8] = []
-    let deadline = DispatchTime.now().uptimeNanoseconds + 120_000_000_000
-    while answer.count <= 128 {
-        let now = DispatchTime.now().uptimeNanoseconds
-        guard now < deadline else { throw TransferError.timeout }
-        var pollDescriptor = pollfd(fd: descriptor, events: Int16(POLLIN), revents: 0)
-        let remaining = Int32((deadline - now) / 1_000_000 + 1)
-        let ready = poll(&pollDescriptor, 1, remaining)
-        if ready < 0, errno == EINTR { continue }
-        guard ready > 0 else { throw TransferError.timeout }
-        var byte: UInt8 = 0
-        let count = Darwin.read(descriptor, &byte, 1)
-        if count < 0, errno == EINTR { continue }
-        guard count == 1 else { throw TransferError.consentRequired }
-        if byte == 10 || byte == 13 { return String(bytes: answer, encoding: .utf8) == expected }
-        answer.append(byte)
-    }
-    return false
-}
 }

@@ -27,7 +27,7 @@ public enum CLIParseError: Error, Equatable, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .missingCommand:
-            "Choose pair, list, groups, doctor, run, or help."
+            "Choose pair, list, groups, doctor, run, transfer, or help."
         case .unknownCommand(let command):
             "Unknown command: \(command)"
         case .unexpectedArguments(let command):

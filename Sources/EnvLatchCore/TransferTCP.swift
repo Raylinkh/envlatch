@@ -102,7 +102,12 @@ public final class TransferTCPListener {
         self.descriptor = socket(AF_INET, SOCK_STREAM, 0)
         guard descriptor >= 0 else { throw TransferError.transport }
         do {
-            guard fcntl(descriptor, F_SETFL, O_NONBLOCK) == 0,
+            // Rebind after this one-shot receiver's previous connection enters TIME_WAIT.
+            // SO_REUSEPORT is intentionally absent: a live listener remains exclusive.
+            var reuseAddress: Int32 = 1
+            guard setsockopt(descriptor, SOL_SOCKET, SO_REUSEADDR, &reuseAddress,
+                             socklen_t(MemoryLayout.size(ofValue: reuseAddress))) == 0,
+                  fcntl(descriptor, F_SETFL, O_NONBLOCK) == 0,
                   fcntl(descriptor, F_SETFD, FD_CLOEXEC) == 0 else { throw TransferError.transport }
             let bound = withUnsafePointer(to: &endpoint) {
                 $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
