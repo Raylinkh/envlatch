@@ -22,6 +22,8 @@ install -m 644 "$project_root/Resources/AppIcon.icns" "$stage_app/Contents/Resou
 install -m 755 "$project_root/scripts/pair-agents.sh" "$stage_app/Contents/Resources/pair-agents.sh"
 ditto "$project_root/AgentSkill/envlatch" "$stage_app/Contents/Resources/envlatch-skill"
 ditto "$project_root/Sources/EnvLatch/Resources/ProviderIcons" "$stage_app/Contents/Resources/ProviderIcons"
+# Keep SwiftPM resources available after relocation away from the build tree.
+ditto "$resource_bundle" "$stage_app/Contents/Resources/EnvLatch_EnvLatch.bundle"
 compiled_chinese="$resource_bundle/zh-hans.lproj"
 if [[ ! -d "$compiled_chinese" ]]; then
   compiled_chinese="$resource_bundle/zh-Hans.lproj"

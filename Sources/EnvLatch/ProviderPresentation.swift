@@ -205,9 +205,21 @@ struct ProviderPresentation {
 }
 
 enum ProviderIconAsset {
-    static func url(named name: String) -> URL? {
+    static func url(named name: String, mainBundle: Bundle = .main) -> URL? {
+        // Bundle.module traps if a packaged app is missing its SwiftPM bundle.
+        // Discover it optionally so provider marks can always use their fallback.
+        let resourceBundleName = "EnvLatch_EnvLatch.bundle"
+        let candidates = [
+            mainBundle.resourceURL?.appendingPathComponent(resourceBundleName),
+            mainBundle.bundleURL.appendingPathComponent(resourceBundleName),
+            mainBundle.executableURL?.deletingLastPathComponent()
+                .appendingPathComponent(resourceBundleName),
+        ]
+        let bundles = [mainBundle] + candidates.compactMap { url in
+            url.flatMap { Bundle(url: $0) }
+        }
         for fileExtension in ["svg", "png"] {
-            for bundle in [Bundle.main, Bundle.module] {
+            for bundle in bundles {
                 if let url = bundle.url(
                     forResource: name,
                     withExtension: fileExtension,
