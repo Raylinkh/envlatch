@@ -28,8 +28,30 @@ vulnerability.
 ## Security boundary
 
 EnvLatch stores credential values in the user's non-synchronizing default
-Keychain and releases them only as environment variables of an explicitly
-launched process. It has no command to reveal, export, or copy stored values.
+Keychain and releases selected values as environment variables of an explicitly
+launched process. It has no command to reveal values or export a vault.
+
+The paired Mac transfer source draft adds an opt-in copy of one exact saved key
+directly into a specifically pinned target Mac's Keychain. It requires macOS 14+,
+public-fingerprint verification and explicit local approval on both Macs. It is
+not part of the published v0.3.0 binary. Existing setup/display-name pairing does
+not grant transfer authority. Target insertion is create-only; no source deletion,
+target replacement, background sync, group transfer or endpoint-profile transfer
+is supported. [Transfer contract and evidence](docs/features/paired-key-transfer/STATUS.md).
+
+Apple CryptoKit authenticated HPKE protects transfer contents and authenticates
+the pinned peers. The application binds approval to the exact saved name, both
+peer fingerprints, operation UUID and fresh challenge. Private device keys live
+in a separate non-synchronizing Keychain service; peer and operation files contain
+public metadata only. No credential value is sent through standard output,
+standard error, arguments, clipboard, temporary files, or diagnostics. Interrupted
+delivery can leave an unknown outcome; a receipt confirms a historical commit,
+and retries cannot overwrite or automatically resend a value.
+
+HPKE does not conceal network addresses or message lengths, and compromise of a
+recipient's static private key can expose recorded past ciphertext. It is not a
+forward-secrecy or malicious-local-process isolation claim. [RFC 9180 security
+considerations](https://www.rfc-editor.org/rfc/rfc9180.html#section-9).
 
 This is not process isolation. A launched process and its descendants can read
 the variables selected for that launch. Debuggers, crash reporters, malicious

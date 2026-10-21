@@ -1,10 +1,10 @@
 # EnvLatch Product Contract
 
-Status: accepted v0.1 contract plus owner-approved multi-key CLI extension on 2026-07-27
+Status: accepted v0.1 contract plus owner-approved multi-key CLI extension on 2026-07-27; paired Mac transfer draft authorized by Hub1120 on 2026-10-21
 Decision owner: Kehua
 Decision: owner-override; demand validation was skipped and must not be claimed
 Exposure: public source at https://github.com/Raylinkh/envlatch by 2026-07-29; notarized binary distribution is separately owner-gated
-Meta-budget: one native app, one bundled executable, one portable skill, no server, sync, proxy, provider plugin, or custom cryptography
+Meta-budget: one native app, one bundled executable, one portable skill, one opt-in one-shot paired receiver; no persistent server, sync, proxy, provider plugin, or custom cryptography
 
 ## Outcome and boundaries
 
@@ -16,13 +16,15 @@ The security claim is deliberately narrow: values are encrypted at rest by macOS
 
 ### Non-goals
 
-- Cloud sync, accounts, teams, sharing, rotation, or provider calls.
+- Cloud sync, accounts, teams, general sharing, rotation, or provider calls. The bounded opt-in paired Mac copy is specified in AK-8.
 - `.env` export, `eval` output, clipboard copy, reveal, or a generic `get` command.
 - Shell-profile mutation or provider-specific commands.
 - Arbitrary headers, model routing, failover, per-agent secret scopes, short-lived credentials, or biometric-per-read policy in v1.
 - Replacing OAuth flows already managed by an agent CLI.
 
 ## Binding requirements
+
+- **AK-8 — Paired Mac copy (draft, not released):** On macOS 14+, a separately pinned public-key peer and explicit source/target approval can copy exactly one named credential over the tailnet into the target Keychain. Use Apple's authenticated HPKE implementation and the existing Keychain owner. Never reveal/export values, delete the source, overwrite a target, copy groups/endpoint profiles, or treat an agent display-name pairing as authority. Reject wrong peers, substituted operation/name/challenge, replay, and name/group collisions before the governed read/write. A durable non-secret operation receipt distinguishes committed from rejected or unknown; reconnect is status-only and cannot repeat delivery. The CLI requires a controlling terminal for approval and has no auto-approve switch. [Current contract, decisions and verification](docs/features/paired-key-transfer/STATUS.md). Existing macOS 13 local launch and all AK-1 through AK-7 requirements remain in force.
 
 - **AK-1 — Store once:** The GUI accepts a safe credential environment name and a non-empty, NUL-free value, then adds or replaces one exact generic-password item in the stable `dev.agentkeyring.secrets` service in the user's default file-based Keychain.
 - **AK-2 — Never render values:** The main window lists names, masked state, optional non-secret endpoint metadata, and optional key-group membership only. It never fetches secret data merely to render the list. Edit uses a fresh secure field; delete requires confirmation. Endpoint metadata contains one provider label, API contract, base URL, Keychain account reference, and target credential environment name. Key-group metadata contains only a display name and Keychain account references. Neither contains a value.

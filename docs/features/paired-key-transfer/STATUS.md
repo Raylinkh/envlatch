@@ -33,6 +33,7 @@ Runtime readiness: local Swift and existing 348 MB `.build` cache available; coo
 ### Evidence / status
 
 - Design checkpoint: native authenticated HPKE selected over TLS certificate bootstrap and custom encryption. [Apple HPKE](https://developer.apple.com/documentation/cryptokit/hpke), [authenticated sender](https://developer.apple.com/documentation/cryptokit/hpke/sender/init(recipientkey:ciphersuite:info:authenticatedby:)), [authenticated recipient](https://developer.apple.com/documentation/cryptokit/hpke/recipient/init(privatekey:ciphersuite:info:encapsulatedkey:authenticatedby:)) (checked 2026-10-21).
-- Implementation: pending. Source tests: pending. Genuine two-device proof: pending. Exact-head Opus review: pending. CI: pending.
+- Baseline: `swift test --no-parallel` exit 0; 68 tests across 18 suites on `c18a5809dc7a3b67837016cf51a02d47dfe6183a`. Existing real-Keychain cases use isolated `dev.envlatch.tests.*` services. Evidence: `/private/tmp/envlatch-transfer-tests-01a15f0a/baseline.log` and `baseline-manifest.json` (manifest SHA-256 `00f904f91434333d85c423e825734edde6e5604234e3b7ac796a3546f258e644`).
+- Implementation: in progress. New source tests: pending. Genuine two-device proof: pending. Exact-head Opus review: pending. CI: pending.
 - Draft PR requested explicitly. No tag, release, signing/notarization, installed app update or publication authorized. Ray holds release.
-- Build ownership: reuse local primary `.build`; remote task cache only if needed for the second device, cleaned by the coordinator after inactivity. Retain source/history and non-secret evidence.
+- Build ownership: reuse local primary `.build` (348 MB before work); only the current lease holder may build. Remote root `/Users/jayden/Library/Caches/EnvLatchTransfer-01a15f0a` was created exclusively for this task, owner marker is this chat ID, initial size 4 KB. Coordinator owns remote cleanup after inactivity. Retain source/history and non-secret evidence.
