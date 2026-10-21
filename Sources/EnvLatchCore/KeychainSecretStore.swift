@@ -117,7 +117,7 @@ enum KeychainAccessFactory {
     }
 }
 
-public struct KeychainSecretStore: SecretStore {
+public struct KeychainSecretStore: SecretStore, TransferSecretStore {
     public static let productionService = PersistenceNamespace.keychainService
 
     public let service: String
@@ -201,6 +201,32 @@ public struct KeychainSecretStore: SecretStore {
         )
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainStoreError.osStatus(operation: "delete \(name.rawValue)", status: status)
+        }
+    }
+
+    public func contains(name: CredentialName) throws -> Bool {
+        let keychain = try KeychainTarget.defaultKeychain()
+        var query = KeychainQueryFactory.item(service: service, name: name, keychain: keychain)
+        query[kSecReturnAttributes as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        let status = SecItemCopyMatching(query as CFDictionary, nil)
+        if status == errSecItemNotFound { return false }
+        guard status == errSecSuccess else {
+            throw KeychainStoreError.osStatus(operation: "check transfer target", status: status)
+        }
+        return true
+    }
+
+    public func create(name: CredentialName, value: String) throws {
+        try CredentialName.validateValue(value)
+        let keychain = try KeychainTarget.defaultKeychain()
+        let access = try KeychainAccessFactory.trustedApplication(descriptor: name.rawValue)
+        let query = KeychainQueryFactory.add(service: service, name: name,
+            valueData: Data(value.utf8), access: access, keychain: keychain)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecDuplicateItem { throw TransferError.collision }
+        guard status == errSecSuccess else {
+            throw KeychainStoreError.osStatus(operation: "create transfer target", status: status)
         }
     }
 
