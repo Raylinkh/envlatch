@@ -5,11 +5,20 @@ import Security
 public struct KeychainTransferIdentityStore {
     public static let productionService = "dev.agentkeyring.transfer-identity.v1"
     public let service: String
+    private let selectedKeychain: SecKeychain?
 
-    public init(service: String = Self.productionService) { self.service = service }
+    public init(service: String = Self.productionService) {
+        self.service = service
+        self.selectedKeychain = nil
+    }
+
+    init(service: String, keychain: SecKeychain) {
+        self.service = service
+        self.selectedKeychain = keychain
+    }
 
     public func loadOrCreate() throws -> TransferIdentity {
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         let name = try CredentialName(validating: "ENVLATCH_TRANSFER_PRIVATE_KEY")
         var query = KeychainQueryFactory.item(service: service, name: name, keychain: keychain)
         query[kSecReturnData as String] = true

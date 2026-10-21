@@ -121,13 +121,21 @@ public struct KeychainSecretStore: SecretStore, TransferSecretStore {
     public static let productionService = PersistenceNamespace.keychainService
 
     public let service: String
+    private let selectedKeychain: SecKeychain?
 
     public init(service: String = Self.productionService) {
         self.service = service
+        self.selectedKeychain = nil
+    }
+
+    // Acceptance can select its own Keychain without changing the user's default.
+    init(service: String, keychain: SecKeychain) {
+        self.service = service
+        self.selectedKeychain = keychain
     }
 
     public func listNames() throws -> [CredentialName] {
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         var result: CFTypeRef?
         let status = SecItemCopyMatching(
             KeychainQueryFactory.list(service: service, keychain: keychain) as CFDictionary,
@@ -157,7 +165,7 @@ public struct KeychainSecretStore: SecretStore, TransferSecretStore {
 
     public func save(name: CredentialName, value: String) throws {
         try CredentialName.validateValue(value)
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         let valueData = Data(value.utf8)
         let identity = KeychainQueryFactory.item(
             service: service,
@@ -191,7 +199,7 @@ public struct KeychainSecretStore: SecretStore, TransferSecretStore {
     }
 
     public func delete(name: CredentialName) throws {
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         let status = SecItemDelete(
             KeychainQueryFactory.item(
                 service: service,
@@ -205,7 +213,7 @@ public struct KeychainSecretStore: SecretStore, TransferSecretStore {
     }
 
     public func contains(name: CredentialName) throws -> Bool {
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         var query = KeychainQueryFactory.item(service: service, name: name, keychain: keychain)
         query[kSecReturnAttributes as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -219,7 +227,7 @@ public struct KeychainSecretStore: SecretStore, TransferSecretStore {
 
     public func create(name: CredentialName, value: String) throws {
         try CredentialName.validateValue(value)
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         let access = try KeychainAccessFactory.trustedApplication(descriptor: name.rawValue)
         let query = KeychainQueryFactory.add(service: service, name: name,
             valueData: Data(value.utf8), access: access, keychain: keychain)
@@ -238,7 +246,7 @@ public struct KeychainSecretStore: SecretStore, TransferSecretStore {
     }
 
     public func load(name: CredentialName) throws -> String {
-        let keychain = try KeychainTarget.defaultKeychain()
+        let keychain = try selectedKeychain ?? KeychainTarget.defaultKeychain()
         var query = KeychainQueryFactory.item(
             service: service,
             name: name,
